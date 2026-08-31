@@ -67,7 +67,7 @@ export default function BrandGalleryScreen() {
         <Text style={styles.eyebrow}>PHASE 2 · CATALOGUE &amp; STORAGE</Text>
         <Text style={styles.title}>{BRANDS.length} brands</Text>
         <Text style={styles.subtitle}>
-          {BRANDS.length - noLogoCount} real logos · {noLogoCount} monogram tiles
+          {BRANDS.length - noLogoCount} real logos · {noLogoCount} monograms
         </Text>
 
         <TextInput

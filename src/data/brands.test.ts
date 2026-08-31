@@ -33,7 +33,7 @@ describe('catalogue integrity', () => {
 
   it('has plausible SVG path data wherever a path exists', () => {
     const withPaths = BRANDS.filter((b) => b.path);
-    expect(withPaths.length).toBeGreaterThan(70);
+    expect(withPaths.length).toBeGreaterThan(85);
     for (const brand of withPaths) {
       // Lowercase 'm' is a valid relative moveto; simple-icons uses both.
       expect(brand.path!).toMatch(/^[Mm]/);
@@ -41,12 +41,35 @@ describe('catalogue integrity', () => {
     }
   });
 
-  it('includes the big names that simple-icons dropped, as monograms', () => {
-    for (const id of ['amazon', 'adobe', 'xbox', 'chatgpt', 'disneyplus', 'microsoft365']) {
+  it('recovers real logos for brands the current release delisted', () => {
+    // These were pulled from older simple-icons versions by the generator.
+    for (const id of [
+      'amazon',
+      'adobecreativecloud',
+      'xbox',
+      'openai',
+      'slack',
+      'hulu',
+      'canva',
+      'microsoftoffice',
+      'nintendoswitch',
+      'primevideo',
+      'pocket',
+    ]) {
       const brand = getBrand(id);
       expect(brand).toBeDefined();
-      expect(brand!.path).toBeUndefined();
+      expect(brand!.path).toBeTruthy();
     }
+  });
+
+  it('falls back to a monogram only for brands in no release at all', () => {
+    const monogramOnly = BRANDS.filter((b) => !b.path).map((b) => b.id).sort();
+    expect(monogramOnly).toEqual([
+      'disneyplus',
+      'midjourney',
+      'myfitnesspal',
+      'skyshowtime',
+    ]);
   });
 
   it('still has real logos for the headline brands', () => {
@@ -67,8 +90,9 @@ describe('searchBrands', () => {
   });
 
   it('finds a brand through an alias', () => {
-    const ids = searchBrands('openai').map((b) => b.id);
-    expect(ids).toContain('chatgpt');
+    expect(searchBrands('gpt').map((b) => b.id)).toContain('openai');
+    expect(searchBrands('photoshop').map((b) => b.id)).toContain('adobecreativecloud');
+    expect(searchBrands('office').map((b) => b.id)).toContain('microsoftoffice');
   });
 
   it('finds Prime Video by searching amazon', () => {

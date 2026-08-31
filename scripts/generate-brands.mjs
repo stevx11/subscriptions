@@ -1,13 +1,20 @@
 /**
- * Generates src/data/brands.generated.ts from the simple-icons package.
+ * Generates src/data/brands.generated.ts from simple-icons.
  *
  * Why generate rather than hand-write: an SVG path typed from memory is
  * silently wrong — it renders as a plausible-looking blob that is not the
- * brand's logo. Extracting from simple-icons keeps the artwork correct and the
- * brand colours official, and re-running this picks up upstream fixes.
+ * brand's logo. Extracting keeps the artwork correct and the colours official.
  *
- * simple-icons is a devDependency: the generated file is committed, so nothing
- * ships in the app bundle except the handful of paths we actually use.
+ * Why three versions: simple-icons has progressively removed major brands as
+ * companies asked to be delisted. Amazon, Adobe, Slack, OpenAI, Canva and
+ * Prime Video left in v14; Xbox, Hulu and Microsoft Office left earlier still.
+ * Those are among the most commonly held subscriptions, so each slug is looked
+ * up in the current release first and then in the older ones, taking the first
+ * hit. All three are devDependencies — the generated file is committed, and
+ * only the handful of paths we actually use ends up in the app bundle.
+ *
+ * These are third-party trademarks, used nominatively to label subscriptions
+ * the user already holds, in their own personal app.
  *
  *   node scripts/generate-brands.mjs
  */
@@ -15,21 +22,28 @@
 import { writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
-import * as simpleIcons from 'simple-icons';
+
+import * as current from 'simple-icons';
+import * as v13 from 'simple-icons-legacy';
+import * as v9 from 'simple-icons-old';
 
 const OUT = join(dirname(fileURLToPath(import.meta.url)), '..', 'src', 'data', 'brands.generated.ts');
 
 /**
- * The curated catalogue. Order within a category is roughly by how likely
- * someone is to have the subscription, because that ordering drives the
- * add-subscription grid.
+ * [slug, category, overrides?]
+ *
+ * Overrides exist because an icon's own title is often not the name of the
+ * thing you subscribe to: the "microsoftoffice" glyph is what people call
+ * Microsoft 365, and the OpenAI mark is what people recognise as ChatGPT.
  */
 const CATALOGUE = [
   // ── Video
   ['netflix', 'Video'],
-  ['youtube', 'Video'],
-  ['hbo', 'Video'],
-  ['appletv', 'Video'],
+  ['youtube', 'Video', { title: 'YouTube Premium' }],
+  ['primevideo', 'Video', { title: 'Prime Video', hex: '#00A8E1', aliases: ['amazon'] }],
+  ['hbo', 'Video', { aliases: ['max'] }],
+  ['appletv', 'Video', { title: 'Apple TV+' }],
+  ['hulu', 'Video'],
   ['paramountplus', 'Video'],
   ['crunchyroll', 'Video'],
   ['twitch', 'Video'],
@@ -49,22 +63,29 @@ const CATALOGUE = [
 
   // ── Gaming
   ['steam', 'Gaming'],
-  ['playstation', 'Gaming'],
+  ['playstation', 'Gaming', { title: 'PlayStation Plus', aliases: ['ps plus', 'psn'] }],
+  ['xbox', 'Gaming', { title: 'Xbox Game Pass', aliases: ['game pass'] }],
+  ['nintendoswitch', 'Gaming', { title: 'Nintendo Switch Online', aliases: ['switch'] }],
   ['epicgames', 'Gaming'],
   ['ubisoft', 'Gaming'],
   ['roblox', 'Gaming'],
-  ['discord', 'Gaming'],
+  ['discord', 'Gaming', { title: 'Discord Nitro' }],
 
   // ── AI
-  ['anthropic', 'AI'],
+  ['openai', 'AI', { title: 'ChatGPT', hex: '#10A37F', aliases: ['openai', 'gpt'] }],
   ['claude', 'AI'],
+  ['anthropic', 'AI'],
   ['perplexity', 'AI'],
-  ['githubcopilot', 'AI'],
+  ['githubcopilot', 'AI', { title: 'GitHub Copilot' }],
   ['huggingface', 'AI'],
 
   // ── Software & productivity
+  ['adobecreativecloud', 'Software', { title: 'Adobe Creative Cloud', aliases: ['photoshop', 'adobe'] }],
+  ['microsoftoffice', 'Software', { title: 'Microsoft 365', hex: '#D83B01', aliases: ['office', 'word', 'excel'] }],
   ['notion', 'Software'],
   ['figma', 'Software'],
+  ['canva', 'Software'],
+  ['slack', 'Software'],
   ['zoom', 'Software'],
   ['github', 'Software'],
   ['gitlab', 'Software'],
@@ -78,8 +99,8 @@ const CATALOGUE = [
   ['grammarly', 'Software'],
 
   // ── Cloud & storage
-  ['icloud', 'Cloud'],
-  ['googledrive', 'Cloud'],
+  ['icloud', 'Cloud', { title: 'iCloud+' }],
+  ['googledrive', 'Cloud', { title: 'Google One', aliases: ['google storage', 'drive'] }],
   ['dropbox', 'Cloud'],
   ['mega', 'Cloud'],
   ['backblaze', 'Cloud'],
@@ -93,14 +114,15 @@ const CATALOGUE = [
   ['nordvpn', 'Security'],
   ['expressvpn', 'Security'],
   ['protonvpn', 'Security'],
-  ['proton', 'Security'],
+  ['proton', 'Security', { title: 'Proton Mail' }],
 
   // ── Reading & news
   ['medium', 'Reading'],
   ['substack', 'Reading'],
   ['goodreads', 'Reading'],
+  ['pocket', 'Reading'],
 
-  // ── Health & fitness
+  // ── Health, fitness & learning
   ['strava', 'Fitness'],
   ['fitbit', 'Fitness'],
   ['peloton', 'Fitness'],
@@ -115,6 +137,7 @@ const CATALOGUE = [
   ['doordash', 'Food'],
   ['hellofresh', 'Food'],
   ['starbucks', 'Food'],
+  ['amazon', 'Shopping', { title: 'Amazon Prime', hex: '#FF9900', aliases: ['prime'] }],
   ['ebay', 'Shopping'],
   ['etsy', 'Shopping'],
 
@@ -124,69 +147,98 @@ const CATALOGUE = [
   ['paypal', 'Finance'],
 ];
 
-// simple-icons exports as siPascalCase; build a slug lookup instead of guessing.
-const bySlug = new Map();
-for (const value of Object.values(simpleIcons)) {
-  if (value && typeof value === 'object' && 'slug' in value && 'path' in value) {
-    bySlug.set(value.slug, value);
+function indexOf(namespace) {
+  const map = new Map();
+  for (const value of Object.values(namespace)) {
+    if (value && typeof value === 'object' && 'slug' in value && 'path' in value) {
+      map.set(value.slug, value);
+    }
   }
+  return map;
 }
+
+// Order matters: prefer the current release so upstream artwork fixes win.
+const SOURCES = [
+  { name: 'current', icons: indexOf(current) },
+  { name: 'v13', icons: indexOf(v13) },
+  { name: 'v9', icons: indexOf(v9) },
+];
 
 const resolved = [];
 const missing = [];
+const sourceCounts = {};
 
-for (const [slug, category] of CATALOGUE) {
-  const icon = bySlug.get(slug);
-  if (!icon) {
+for (const [slug, category, overrides = {}] of CATALOGUE) {
+  const hit = SOURCES.find((source) => source.icons.has(slug));
+  if (!hit) {
     missing.push(slug);
     continue;
   }
+  const icon = hit.icons.get(slug);
+  sourceCounts[hit.name] = (sourceCounts[hit.name] ?? 0) + 1;
+
   resolved.push({
     id: slug,
-    title: icon.title,
-    hex: `#${icon.hex}`,
+    title: overrides.title ?? icon.title,
+    hex: overrides.hex ?? `#${icon.hex}`,
     category,
     path: icon.path,
+    aliases: overrides.aliases,
   });
 }
 
 if (missing.length > 0) {
-  console.warn(`\n  ${missing.length} slug(s) not found in simple-icons:`);
+  console.warn(`\n  ${missing.length} slug(s) found in no version:`);
   for (const slug of missing) console.warn(`   - ${slug}`);
-  console.warn('  Fix or remove them in scripts/generate-brands.mjs.\n');
+  console.warn('');
 }
 
 const banner = `/**
  * GENERATED FILE — do not edit by hand.
  * Regenerate with: node scripts/generate-brands.mjs
  *
- * Logo paths and brand colours come from simple-icons (CC0). Each path is
- * designed for a 24x24 viewBox.
+ * Logo paths and brand colours come from simple-icons, drawing on older
+ * releases for brands the current one has removed. Paths use a 24x24 viewBox.
  */
 
 export interface GeneratedBrand {
   id: string;
   title: string;
-  /** Official brand colour, "#RRGGBB". */
+  /** Brand colour, "#RRGGBB". */
   hex: string;
   category: string;
   /** SVG path data on a 24x24 viewBox. */
   path: string;
+  aliases?: readonly string[];
 }
 
 export const GENERATED_BRANDS: readonly GeneratedBrand[] = [
 `;
 
 const body = resolved
-  .map(
-    (brand) =>
-      `  {\n    id: ${JSON.stringify(brand.id)},\n    title: ${JSON.stringify(brand.title)},\n    hex: ${JSON.stringify(brand.hex)},\n    category: ${JSON.stringify(brand.category)},\n    path: ${JSON.stringify(brand.path)},\n  },`,
-  )
+  .map((brand) => {
+    const lines = [
+      `    id: ${JSON.stringify(brand.id)},`,
+      `    title: ${JSON.stringify(brand.title)},`,
+      `    hex: ${JSON.stringify(brand.hex)},`,
+      `    category: ${JSON.stringify(brand.category)},`,
+      `    path: ${JSON.stringify(brand.path)},`,
+    ];
+    if (brand.aliases) {
+      lines.push(`    aliases: ${JSON.stringify(brand.aliases)},`);
+    }
+    return `  {\n${lines.join('\n')}\n  },`;
+  })
   .join('\n');
 
 writeFileSync(OUT, `${banner}${body}\n];\n`, 'utf8');
 
-console.log(`  Wrote ${resolved.length} brands to src/data/brands.generated.ts`);
+console.log(`  Wrote ${resolved.length} brands with real logos.`);
+console.log(
+  `  Sources: ${Object.entries(sourceCounts)
+    .map(([key, value]) => `${key}=${value}`)
+    .join(', ')}`,
+);
 if (missing.length > 0) {
   process.exitCode = 1;
 }

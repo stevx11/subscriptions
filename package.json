@@ -50,6 +50,8 @@
     "eslint-config-expo": "~10.0.0",
     "jest": "^30.5.0",
     "simple-icons": "^16.29.0",
+    "simple-icons-legacy": "npm:simple-icons@^13.21.0",
+    "simple-icons-old": "npm:simple-icons@^9.21.0",
     "ts-jest": "^29.4.12",
     "typescript": "~5.9.2"
   },

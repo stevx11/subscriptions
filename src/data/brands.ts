@@ -3,13 +3,11 @@
  *
  * Two sources feed it:
  *
- *  1. `brands.generated.ts` — 76 real logos extracted from simple-icons.
- *  2. `MONOGRAM_BRANDS` below — brands simple-icons has *removed* over
- *     trademark policy (Amazon, Adobe, Microsoft, Xbox, Nintendo, Slack,
- *     OpenAI, Disney+, Prime Video and friends). These are among the most
- *     commonly held subscriptions, so dropping them would be a real gap.
- *     They keep their official brand colour and render as a monogram tile,
- *     which reads as a deliberate design choice rather than a missing image.
+ *  1. `brands.generated.ts` — 87 real logos. The generator pulls from the
+ *     current simple-icons release and falls back to older ones for brands
+ *     that have since been delisted (Amazon, Adobe, Xbox, OpenAI, Slack…),
+ *     so those keep their genuine artwork rather than degrading to initials.
+ *  2. `MONOGRAM_BRANDS` below — the few that appear in no release at all.
  *
  * Anything the user types that matches neither still gets a tile: a monogram
  * on a colour derived from the name, so the grid never shows a hole.
@@ -30,26 +28,14 @@ export interface Brand {
 }
 
 /**
- * Brand colours here are the companies' own published colours, used purely to
- * make each tile recognisable at a glance.
+ * The four brands that appear in no release of simple-icons, past or present.
+ * They fall back to a monogram tile in their own brand colour.
  */
 const MONOGRAM_BRANDS: readonly Brand[] = [
-  { id: 'primevideo', title: 'Prime Video', hex: '#00A8E1', category: 'Video', aliases: ['amazon'] },
   { id: 'disneyplus', title: 'Disney+', hex: '#113CCF', category: 'Video', aliases: ['disney'] },
-  { id: 'hulu', title: 'Hulu', hex: '#1CE783', category: 'Video' },
   { id: 'skyshowtime', title: 'SkyShowtime', hex: '#0072C9', category: 'Video' },
-  { id: 'xbox', title: 'Xbox Game Pass', hex: '#107C10', category: 'Gaming', aliases: ['game pass'] },
-  { id: 'nintendo', title: 'Nintendo Switch Online', hex: '#E60012', category: 'Gaming', aliases: ['switch'] },
-  { id: 'chatgpt', title: 'ChatGPT', hex: '#10A37F', category: 'AI', aliases: ['openai', 'gpt'] },
-  { id: 'midjourney', title: 'Midjourney', hex: '#4B4B4B', category: 'AI' },
-  { id: 'adobe', title: 'Adobe Creative Cloud', hex: '#FA0F00', category: 'Software', aliases: ['photoshop', 'creative cloud'] },
-  { id: 'microsoft365', title: 'Microsoft 365', hex: '#D83B01', category: 'Software', aliases: ['office', 'word', 'excel'] },
-  { id: 'canva', title: 'Canva', hex: '#00C4CC', category: 'Software' },
-  { id: 'slack', title: 'Slack', hex: '#4A154B', category: 'Software' },
-  { id: 'googleone', title: 'Google One', hex: '#4285F4', category: 'Cloud', aliases: ['google storage'] },
-  { id: 'amazon', title: 'Amazon Prime', hex: '#FF9900', category: 'Shopping', aliases: ['prime'] },
+  { id: 'midjourney', title: 'Midjourney', hex: '#3A3A47', category: 'AI' },
   { id: 'myfitnesspal', title: 'MyFitnessPal', hex: '#0066EE', category: 'Fitness' },
-  { id: 'pocket', title: 'Pocket', hex: '#EF3F56', category: 'Reading' },
 ];
 
 export const BRANDS: readonly Brand[] = [...GENERATED_BRANDS, ...MONOGRAM_BRANDS].sort(
