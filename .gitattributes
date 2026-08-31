@@ -1,0 +1,8 @@
+# This iOS project is authored on Windows but built on macOS: keep LF in the
+# repo and in the working tree so Xcode and the Swift toolchain never see CRLF.
+* text=auto eol=lf
+
+*.png binary
+*.jpg binary
+*.pdf binary
+*.xcassets/** -text
