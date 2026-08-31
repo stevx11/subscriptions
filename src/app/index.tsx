@@ -44,8 +44,6 @@ export default function BrandGalleryScreen() {
     [subscriptions, settings.homeCurrency],
   );
 
-  const noLogoCount = BRANDS.filter((b) => !b.path).length;
-
   const handleAdd = (brandId: string, title: string, hex: string) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     addSubscription({
@@ -66,9 +64,7 @@ export default function BrandGalleryScreen() {
       <View style={styles.header}>
         <Text style={styles.eyebrow}>PHASE 2 · CATALOGUE &amp; STORAGE</Text>
         <Text style={styles.title}>{BRANDS.length} brands</Text>
-        <Text style={styles.subtitle}>
-          {BRANDS.length - noLogoCount} real logos · {noLogoCount} monograms
-        </Text>
+        <Text style={styles.subtitle}>Every one with real artwork</Text>
 
         <TextInput
           value={query}

@@ -1,16 +1,15 @@
 /**
  * The brand catalogue behind the add-subscription picker.
  *
- * Two sources feed it:
+ * Every brand in it has real artwork. The generator pulls from the current
+ * simple-icons release and falls back to older ones for brands that have since
+ * been delisted (Amazon, Adobe, Xbox, OpenAI, Slack…), so those keep their
+ * genuine logos. A brand with no logo available anywhere is left out of the
+ * catalogue entirely rather than shown as initials.
  *
- *  1. `brands.generated.ts` — 87 real logos. The generator pulls from the
- *     current simple-icons release and falls back to older ones for brands
- *     that have since been delisted (Amazon, Adobe, Xbox, OpenAI, Slack…),
- *     so those keep their genuine artwork rather than degrading to initials.
- *  2. `MONOGRAM_BRANDS` below — the few that appear in no release at all.
- *
- * Anything the user types that matches neither still gets a tile: a monogram
- * on a colour derived from the name, so the grid never shows a hole.
+ * The monogram fallback in `BrandIcon` still matters: a subscription the user
+ * types in by hand — a gym, a landlord, a local service — will never have a
+ * logo, and needs a generated tile.
  */
 
 import { GENERATED_BRANDS } from './brands.generated';
@@ -27,19 +26,9 @@ export interface Brand {
   aliases?: readonly string[];
 }
 
-/**
- * The four brands that appear in no release of simple-icons, past or present.
- * They fall back to a monogram tile in their own brand colour.
- */
-const MONOGRAM_BRANDS: readonly Brand[] = [
-  { id: 'disneyplus', title: 'Disney+', hex: '#113CCF', category: 'Video', aliases: ['disney'] },
-  { id: 'skyshowtime', title: 'SkyShowtime', hex: '#0072C9', category: 'Video' },
-  { id: 'midjourney', title: 'Midjourney', hex: '#3A3A47', category: 'AI' },
-  { id: 'myfitnesspal', title: 'MyFitnessPal', hex: '#0066EE', category: 'Fitness' },
-];
 
-export const BRANDS: readonly Brand[] = [...GENERATED_BRANDS, ...MONOGRAM_BRANDS].sort(
-  (a, b) => a.title.localeCompare(b.title),
+export const BRANDS: readonly Brand[] = [...GENERATED_BRANDS].sort((a, b) =>
+  a.title.localeCompare(b.title),
 );
 
 export const CATEGORIES = [

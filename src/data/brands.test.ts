@@ -31,9 +31,9 @@ describe('catalogue integrity', () => {
     }
   });
 
-  it('has plausible SVG path data wherever a path exists', () => {
+  it('has plausible SVG path data for every brand', () => {
     const withPaths = BRANDS.filter((b) => b.path);
-    expect(withPaths.length).toBeGreaterThan(85);
+    expect(withPaths.length).toBe(BRANDS.length);
     for (const brand of withPaths) {
       // Lowercase 'm' is a valid relative moveto; simple-icons uses both.
       expect(brand.path!).toMatch(/^[Mm]/);
@@ -62,14 +62,11 @@ describe('catalogue integrity', () => {
     }
   });
 
-  it('falls back to a monogram only for brands in no release at all', () => {
-    const monogramOnly = BRANDS.filter((b) => !b.path).map((b) => b.id).sort();
-    expect(monogramOnly).toEqual([
-      'disneyplus',
-      'midjourney',
-      'myfitnesspal',
-      'skyshowtime',
-    ]);
+  it('contains no logo-less entries at all', () => {
+    // Brands with no artwork available are excluded from the catalogue rather
+    // than rendered as initials. The monogram path in BrandIcon exists purely
+    // for subscriptions the user types in by hand.
+    expect(BRANDS.filter((b) => !b.path)).toEqual([]);
   });
 
   it('still has real logos for the headline brands', () => {
