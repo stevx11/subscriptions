@@ -1,27 +1,39 @@
-# Xcode — user-specific state
-xcuserdata/
-*.xcuserstate
-*.xcscmblueprint
-*.xccheckout
+# dependencies
+node_modules/
 
-# Build output
-build/
-DerivedData/
-*.ipa
-*.dSYM.zip
-*.dSYM
+# Expo
+.expo/
+dist/
+web-build/
+expo-env.d.ts
+.metro-health-check*
 
-# Swift Package Manager
-.build/
-.swiftpm/
-Packages/
-Package.resolved
+# generated native folders (we never commit these; EAS regenerates them)
+/ios
+/android
+.kotlin/
+*.orig.*
 
-# CocoaPods / Carthage (not used today, ignored if ever added)
-Pods/
-Carthage/Build/
+# signing material — never commit
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
 
-# macOS / editor cruft
+# logs
+npm-debug.*
+yarn-debug.*
+yarn-error.*
+
+# typescript
+*.tsbuildinfo
+
+# local env
+.env*.local
+
+# editor / OS
 .DS_Store
+*.pem
 *.swp
 *~
