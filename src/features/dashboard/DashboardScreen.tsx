@@ -180,6 +180,11 @@ function NextUpCard({ entry }: { entry: UpcomingEntry }) {
             {subscription.name}
           </Txt>
         </View>
+        <View style={styles.heroUrgency}>
+          <Pill accent={urgent ? palette.warning : accent} tone={urgent ? 'warning' : 'accent'}>
+            {relativeDay(days)}
+          </Pill>
+        </View>
       </View>
 
       <View style={styles.heroBottom}>
@@ -192,14 +197,14 @@ function NextUpCard({ entry }: { entry: UpcomingEntry }) {
           </Txt>
         </View>
         <View style={styles.heroWhen}>
+          <Pill accent={urgent ? palette.warning : accent} tone={urgent ? 'warning' : 'accent'}>
+            {relativeDay(days)}
+          </Pill>
           {entry.date && (
             <Txt variant="heading" style={styles.heroDate} numberOfLines={1}>
               {formatDateLong(entry.date)}
             </Txt>
           )}
-          <Pill accent={urgent ? palette.warning : accent} tone={urgent ? 'warning' : 'accent'}>
-            {relativeDay(days)}
-          </Pill>
         </View>
       </View>
     </Card>
@@ -278,7 +283,10 @@ const styles = StyleSheet.create({
   },
   heroAmount: { fontSize: 34, letterSpacing: -1 },
   heroAmountBlock: { flexShrink: 1 },
-  heroWhen: { alignItems: 'flex-end', gap: spacing.sm, flexShrink: 0 },
+  heroWhen: { alignItems: 'flex-end', flexShrink: 0 },
+  // Pinned to the top edge rather than centred with the logo, so it reads as a
+  // corner badge on the card instead of a label attached to the name.
+  heroUrgency: { alignSelf: 'flex-start', flexShrink: 0 },
   // The date is the payload of this card — when the money actually leaves —
   // so it gets full-strength text, not the muted treatment of a caption.
   heroDate: { fontSize: 19, letterSpacing: -0.3 },
