@@ -1,18 +1,28 @@
 /**
- * Tests cover src/domain only — it is pure TypeScript with no React or
- * react-native imports, so it runs under plain ts-jest on Windows with no
- * native toolchain. That is the whole reason the money and date logic lives
- * there: it is the part that must be correct, and this is the only place it
- * can actually be verified.
+ * Tests cover the pure layers only: domain logic, the brand catalogue and
+ * migrations, colour maths, and form validation. None of those import React or
+ * react-native, so they run under plain ts-jest on Windows with no native
+ * toolchain — which is the entire reason the logic that must be correct lives
+ * outside components.
+ *
+ * A module that imports react-native does not belong under these roots.
  */
 module.exports = {
   preset: 'ts-jest',
   testEnvironment: 'node',
-  // src/data is included for its pure modules (brands, migrations). Anything
-  // importing react-native belongs in a component test, not here.
-  roots: ['<rootDir>/src/domain', '<rootDir>/src/data', '<rootDir>/src/ui'],
+  roots: [
+    '<rootDir>/src/domain',
+    '<rootDir>/src/data',
+    '<rootDir>/src/ui',
+    '<rootDir>/src/features',
+  ],
   testMatch: ['**/*.test.ts'],
+  // Mirrors the "@/*" alias from tsconfig.json so tests resolve imports the
+  // same way the bundler does.
+  moduleNameMapper: {
+    '^@/(.*)$': '<rootDir>/src/$1',
+  },
   transform: {
-    '^.+\.ts$': ['ts-jest', { tsconfig: { module: 'commonjs', target: 'es2022' } }],
+    '^.+\\.ts$': ['ts-jest', { tsconfig: { module: 'commonjs', target: 'es2022' } }],
   },
 };

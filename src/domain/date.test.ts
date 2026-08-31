@@ -3,15 +3,18 @@ import {
   addMonths,
   addYears,
   compareIsoDate,
+  dayOfWeekMonday0,
   daysBetween,
   daysInMonth,
   formatIsoDate,
   formatDateLong,
   formatDateShort,
+  formatMonthLabel,
   fromEpochDay,
   isLeapYear,
   ordinalSuffix,
   parseIsoDate,
+  startOfMonth,
   toEpochDay,
   todayIso,
 } from './date';
@@ -226,5 +229,41 @@ describe('formatDateShort', () => {
   it('abbreviates the month', () => {
     expect(formatDateShort('2026-09-03')).toBe('3 Sep');
     expect(formatDateShort('2026-01-15')).toBe('15 Jan');
+  });
+});
+
+describe('dayOfWeekMonday0', () => {
+  it('places the epoch (a Thursday) at index 3', () => {
+    expect(dayOfWeekMonday0('1970-01-01')).toBe(3);
+  });
+
+  it.each([
+    ['2026-09-07', 0], // Monday
+    ['2026-09-08', 1],
+    ['2026-09-12', 5], // Saturday
+    ['2026-09-13', 6], // Sunday
+  ])('%s is index %i', (date, expected) => {
+    expect(dayOfWeekMonday0(date)).toBe(expected);
+  });
+
+  it('stays in range for dates before the epoch', () => {
+    for (const date of ['1969-01-01', '1900-06-15', '1955-12-31']) {
+      const index = dayOfWeekMonday0(date);
+      expect(index).toBeGreaterThanOrEqual(0);
+      expect(index).toBeLessThanOrEqual(6);
+    }
+  });
+});
+
+describe('startOfMonth', () => {
+  it('snaps to the first', () => {
+    expect(startOfMonth('2026-09-17')).toBe('2026-09-01');
+    expect(startOfMonth('2026-02-28')).toBe('2026-02-01');
+  });
+});
+
+describe('formatMonthLabel', () => {
+  it('names the month and year', () => {
+    expect(formatMonthLabel('2026-09-17')).toBe('September 2026');
   });
 });

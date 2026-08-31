@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
+import { router } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import Svg, { Defs, LinearGradient, Rect, Stop } from 'react-native-svg';
 
@@ -65,19 +66,29 @@ export function DashboardScreen() {
         <View style={styles.emptyWrap}>
           <Txt variant="title">Nothing tracked yet</Txt>
           <Txt variant="body" color={palette.textMuted} style={styles.emptyBody}>
-            Load a realistic sample set to judge the design against mixed
-            currencies, cycles and renewal dates.
+            Add what you actually pay for and this becomes a running answer to
+            &ldquo;what is about to charge me&rdquo;.
           </Txt>
           <Pressable
             onPress={() => {
               Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+              router.push('/add');
+            }}
+            style={({ pressed }) => [styles.primaryButton, pressed && styles.pressed]}>
+            <Txt variant="label" color={palette.bg}>
+              Add a subscription
+            </Txt>
+          </Pressable>
+          <Pressable
+            onPress={() => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
               for (const sample of sampleSubscriptions()) {
                 addSubscription(sample);
               }
             }}
-            style={({ pressed }) => [styles.primaryButton, pressed && styles.pressed]}>
-            <Txt variant="label" color={palette.bg}>
-              Load sample data
+            style={({ pressed }) => [styles.textButton, pressed && styles.pressed]}>
+            <Txt variant="label" color={palette.textFaint}>
+              Or load sample data
             </Txt>
           </Pressable>
         </View>
@@ -86,7 +97,8 @@ export function DashboardScreen() {
   }
 
   return (
-    <Screen>
+    <View style={styles.root}>
+      <Screen>
       <View style={styles.header}>
         <Txt variant="caption" color={palette.textFaint}>
           TOTAL EACH MONTH
@@ -129,7 +141,26 @@ export function DashboardScreen() {
           </View>
         </View>
       )}
-    </Screen>
+      </Screen>
+      <AddButton />
+    </View>
+  );
+}
+
+/** Floating add button. Sits outside the scroll view so it never scrolls away. */
+function AddButton() {
+  return (
+    <Pressable
+      accessibilityLabel="Add subscription"
+      onPress={() => {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+        router.push('/add');
+      }}
+      style={({ pressed }) => [styles.fab, pressed && styles.fabPressed]}>
+      <Txt variant="title" color={palette.bg} style={styles.fabPlus}>
+        +
+      </Txt>
+    </Pressable>
   );
 }
 
@@ -151,6 +182,11 @@ function relativeDay(days: number): string {
  * The hero. Answers "what is about to take money" before anything else on the
  * screen, because that is the single question the app exists to answer.
  */
+function openEdit(id: string) {
+  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+  router.push({ pathname: '/edit/[id]', params: { id } });
+}
+
 function NextUpCard({ entry }: { entry: UpcomingEntry }) {
   const { subscription, days } = entry;
   const accent = toAccent(getBrand(subscription.brandId)?.hex ?? subscription.color);
@@ -158,7 +194,11 @@ function NextUpCard({ entry }: { entry: UpcomingEntry }) {
   const urgent = days <= 3;
 
   return (
-    <Card accent={accent} strength={tint.hero} style={styles.hero}>
+    <Card
+      accent={accent}
+      strength={tint.hero}
+      style={styles.hero}
+      onPress={() => openEdit(subscription.id)}>
       {/* A soft vertical falloff stops the tint reading as a flat colour block. */}
       <Svg style={StyleSheet.absoluteFill} width="100%" height="100%">
         <Defs>
@@ -197,9 +237,6 @@ function NextUpCard({ entry }: { entry: UpcomingEntry }) {
           </Txt>
         </View>
         <View style={styles.heroWhen}>
-          <Pill accent={urgent ? palette.warning : accent} tone={urgent ? 'warning' : 'accent'}>
-            {relativeDay(days)}
-          </Pill>
           {entry.date && (
             <Txt variant="heading" style={styles.heroDate} numberOfLines={1}>
               {formatDateLong(entry.date)}
@@ -216,7 +253,7 @@ function UpcomingRow({ entry }: { entry: UpcomingEntry }) {
   const accent = toAccent(getBrand(subscription.brandId)?.hex ?? subscription.color);
 
   return (
-    <Card accent={accent} style={styles.row}>
+    <Card accent={accent} style={styles.row} onPress={() => openEdit(subscription.id)}>
       {/* A colour bar on the leading edge makes the list scannable at a glance
           without every card becoming a saturated block. */}
       <View style={[styles.edge, { backgroundColor: accent }]} />
@@ -246,7 +283,9 @@ function UpcomingRow({ entry }: { entry: UpcomingEntry }) {
 
 function PausedRow({ subscription }: { subscription: Subscription }) {
   return (
-    <Card style={[styles.row, styles.pausedRow]}>
+    <Card
+      style={[styles.row, styles.pausedRow]}
+      onPress={() => openEdit(subscription.id)}>
       <View style={styles.dimmed}>
         <BrandIcon brandId={subscription.brandId} name={subscription.name} size={40} />
       </View>
@@ -266,6 +305,7 @@ function PausedRow({ subscription }: { subscription: Subscription }) {
 }
 
 const styles = StyleSheet.create({
+  root: { flex: 1 },
   header: { gap: 2, paddingTop: spacing.sm },
   totalRow: { flexDirection: 'row', alignItems: 'flex-end' },
   warningRow: { marginTop: spacing.sm },
@@ -314,6 +354,25 @@ const styles = StyleSheet.create({
 
   emptyWrap: { paddingTop: spacing.xxxl * 2, gap: spacing.md, alignItems: 'flex-start' },
   emptyBody: { lineHeight: 21 },
+  textButton: { paddingVertical: spacing.sm },
+  fab: {
+    position: 'absolute',
+    right: spacing.xl,
+    bottom: spacing.xxl,
+    width: 58,
+    height: 58,
+    borderRadius: 29,
+    backgroundColor: palette.text,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000000',
+    shadowOpacity: 0.4,
+    shadowRadius: 16,
+    shadowOffset: { width: 0, height: 6 },
+    elevation: 8,
+  },
+  fabPressed: { transform: [{ scale: 0.94 }], opacity: 0.9 },
+  fabPlus: { fontSize: 30, lineHeight: 34, fontWeight: '400' },
   primaryButton: {
     marginTop: spacing.sm,
     backgroundColor: palette.text,

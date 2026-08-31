@@ -211,3 +211,26 @@ export function formatDateShort(date: IsoDate): string {
   const { month, day } = parseIsoDate(date);
   return `${day} ${MONTH_NAMES[month - 1].slice(0, 3)}`;
 }
+
+/**
+ * Day of week with Monday as 0, through Sunday as 6.
+ *
+ * Derived from the epoch day rather than `Date.getDay()` so it stays timezone
+ * independent. 1970-01-01 was a Thursday, which is index 3 in a Monday-first
+ * week — hence the +3 offset.
+ */
+export function dayOfWeekMonday0(date: IsoDate): number {
+  return (((toEpochDay(date) % 7) + 7) % 7 + 3) % 7;
+}
+
+/** First day of the month containing `date`. */
+export function startOfMonth(date: IsoDate): IsoDate {
+  const { year, month } = parseIsoDate(date);
+  return formatIsoDate({ year, month, day: 1 });
+}
+
+/** "September 2026" — the month label above a calendar grid. */
+export function formatMonthLabel(date: IsoDate): string {
+  const { year, month } = parseIsoDate(date);
+  return `${MONTH_NAMES[month - 1]} ${year}`;
+}
