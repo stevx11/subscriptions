@@ -9,6 +9,7 @@ import {
   monogramFor,
   readableTextOn,
 } from '@/data/brands';
+import { shade } from './color';
 
 interface BrandIconProps {
   /** Catalogue id. Falls back to a monogram when absent or unknown. */
@@ -23,26 +24,16 @@ interface BrandIconProps {
   variant?: 'tile' | 'bare';
 }
 
-/** Shift a hex colour's lightness. `amount` is -1..1. */
-function shade(hex: string, amount: number): string {
-  const clean = hex.replace('#', '');
-  const channels = [0, 2, 4].map((offset) => parseInt(clean.slice(offset, offset + 2), 16));
-  const shifted = channels.map((channel) => {
-    const target = amount >= 0 ? 255 : 0;
-    return Math.round(channel + (target - channel) * Math.abs(amount));
-  });
-  return `#${shifted.map((value) => value.toString(16).padStart(2, '0')).join('')}`;
-}
 
 /**
  * Renders a subscription's logo.
  *
- * Three tiers, so there is never an empty square:
- *   1. A real logo path (87 brands, including ones the current simple-icons
- *      release has delisted — the generator falls back to older versions).
- *   2. A monogram for the handful that exist in no release (Disney+,
- *      Midjourney, SkyShowtime, MyFitnessPal), in their own brand colour.
- *   3. A monogram on a colour hashed from the name, for anything hand-entered.
+ * Two tiers, so there is never an empty square:
+ *   1. A real logo path — every brand in the catalogue has one, including the
+ *      ones the current simple-icons release has delisted (the generator falls
+ *      back to older versions for those).
+ *   2. A monogram on a colour hashed from the name, for subscriptions the user
+ *      typed in by hand. Those have no logo anywhere and always will not.
  *
  * The monogram is deliberately not a flat colour block. A diagonal gradient
  * plus a hairline inner highlight is what makes a plain square read as an app
