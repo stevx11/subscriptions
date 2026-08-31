@@ -6,7 +6,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 This project is on **Expo SDK 54** (React Native 0.81.5, React 19.1, TypeScript 5.9) — deliberately, and it must stay there.
 
-**Do not upgrade the Expo SDK.** The user's iPhone runs an iOS version old enough that the App Store only offers them an Expo Go build supporting **up to SDK 54**. Anything newer simply refuses to open on their phone. `npx expo install --fix` and "upgrade to latest" advice will break the only way this app can be run. If an upgrade ever becomes desirable, confirm what their Expo Go supports *first*.
+**Do not upgrade the Expo SDK without checking the phone first.** The user's installed Expo Go supports **up to SDK 54**, and an SDK 57 build would not open on it at all. Their iPhone is on iOS 26.6.1, so this is *not* an OS limitation — it's the installed Expo Go version. The ceiling is therefore liftable: if they update Expo Go from the App Store, a newer SDK becomes possible. Until that is confirmed on the device, treat SDK 54 as fixed. A well-meaning `npx expo install --fix` or "upgrade to latest" will silently break the only way this app can be run.
+
+Verified working on device at SDK 54: app loads in Expo Go, hot reload, local scheduled notifications (including while the phone is locked), and haptics.
 
 The APIs here have also moved from what older training data suggests — `setNotificationHandler` takes `shouldShowBanner`/`shouldShowList` (not `shouldShowAlert`), triggers are typed via `SchedulableTriggerInputTypes`, routes live in `src/app/`, and the New Architecture is on.
 
