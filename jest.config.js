@@ -8,7 +8,9 @@
 module.exports = {
   preset: 'ts-jest',
   testEnvironment: 'node',
-  roots: ['<rootDir>/src/domain'],
+  // src/data is included for its pure modules (brands, migrations). Anything
+  // importing react-native belongs in a component test, not here.
+  roots: ['<rootDir>/src/domain', '<rootDir>/src/data'],
   testMatch: ['**/*.test.ts'],
   transform: {
     '^.+\.ts$': ['ts-jest', { tsconfig: { module: 'commonjs', target: 'es2022' } }],

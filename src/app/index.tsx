@@ -1,271 +1,239 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useMemo, useState } from 'react';
 import {
-  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
   Text,
+  TextInput,
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import Constants, { ExecutionEnvironment } from 'expo-constants';
 import * as Haptics from 'expo-haptics';
-import * as Notifications from 'expo-notifications';
+
+import { BRANDS, CATEGORIES, searchBrands } from '@/data/brands';
+import { useAppStore } from '@/data/store';
+import { BrandIcon } from '@/ui/BrandIcon';
+import { CYCLE_PRESETS } from '@/domain/cycle';
+import { formatMoney, money } from '@/domain/money';
+import { todayIso } from '@/domain/date';
+import { computeTotals } from '@/domain/totals';
 
 /**
- * Phase 0 smoke test.
+ * Phase 2 verification screen.
  *
- * This screen exists to prove four things on the real device before any of the
- * app gets built on top of them:
- *   1. Expo Go can load the project at all
- *   2. Hot reload works (change HOT_RELOAD_PROBE below and watch it update)
- *   3. iOS grants notification permission and actually fires a scheduled local
- *      notification — the single riskiest assumption in the whole plan
- *   4. Haptics work
+ * Two things to see here:
+ *   1. Every brand tile, so logo rendering can be checked on a real display
+ *      rather than in a browser that lies about scaling.
+ *   2. A persistence probe — add rows, force-quit the app, reopen, and they
+ *      should still be there. That is the only way to prove AsyncStorage
+ *      rehydration actually works.
  *
- * It gets deleted in Phase 1. Nothing here is production code.
+ * Replaced by the real dashboard in Phase 5.
  */
+export default function BrandGalleryScreen() {
+  const [query, setQuery] = useState('');
+  const subscriptions = useAppStore((state) => state.subscriptions);
+  const settings = useAppStore((state) => state.settings);
+  const hydrated = useAppStore((state) => state.hydrated);
+  const addSubscription = useAppStore((state) => state.addSubscription);
+  const removeSubscription = useAppStore((state) => state.removeSubscription);
 
-// ── Change this string (or the colour) and save — the phone should update in
-// about a second, without you touching anything.
-const HOT_RELOAD_PROBE = 'edit me and save';
-const PROBE_COLOR = '#3D596D';
+  const results = useMemo(() => searchBrands(query, 200), [query]);
+  const totals = useMemo(
+    () => computeTotals(subscriptions, settings.homeCurrency, null),
+    [subscriptions, settings.homeCurrency],
+  );
 
-type LogEntry = { at: string; text: string; kind: 'ok' | 'warn' | 'info' };
+  const noLogoCount = BRANDS.filter((b) => !b.path).length;
 
-export default function Phase0Screen() {
-  const [permission, setPermission] = useState<string>('checking…');
-  const [scheduledCount, setScheduledCount] = useState<number | null>(null);
-  const [log, setLog] = useState<LogEntry[]>([]);
-
-  const isExpoGo =
-    Constants.executionEnvironment === ExecutionEnvironment.StoreClient;
-
-  const addLog = useCallback((text: string, kind: LogEntry['kind'] = 'info') => {
-    const at = new Date().toLocaleTimeString();
-    setLog((prev) => [{ at, text, kind }, ...prev].slice(0, 12));
-  }, []);
-
-  const refreshScheduled = useCallback(async () => {
-    const all = await Notifications.getAllScheduledNotificationsAsync();
-    setScheduledCount(all.length);
-    return all.length;
-  }, []);
-
-  useEffect(() => {
-    (async () => {
-      const settings = await Notifications.getPermissionsAsync();
-      setPermission(settings.granted ? 'granted' : settings.status);
-      await refreshScheduled();
-    })();
-
-    // Fires when a notification arrives while the app is open.
-    const sub = Notifications.addNotificationReceivedListener((n) => {
-      addLog(`RECEIVED: ${n.request.content.title}`, 'ok');
-      refreshScheduled();
+  const handleAdd = (brandId: string, title: string, hex: string) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    addSubscription({
+      name: title,
+      brandId,
+      color: hex,
+      category: BRANDS.find((b) => b.id === brandId)?.category ?? 'Other',
+      price: money(999, settings.homeCurrency),
+      cycle: CYCLE_PRESETS.monthly,
+      anchorDate: todayIso(),
+      status: 'active',
+      reminderDaysBefore: null,
     });
-    return () => sub.remove();
-  }, [addLog, refreshScheduled]);
-
-  const tap = () => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-
-  const requestPermission = async () => {
-    tap();
-    const result = await Notifications.requestPermissionsAsync({
-      ios: { allowAlert: true, allowBadge: true, allowSound: true },
-    });
-    setPermission(result.granted ? 'granted' : result.status);
-    addLog(
-      result.granted ? 'Permission granted' : `Permission: ${result.status}`,
-      result.granted ? 'ok' : 'warn',
-    );
-  };
-
-  const schedule = async (seconds: number) => {
-    tap();
-    const settings = await Notifications.getPermissionsAsync();
-    if (!settings.granted) {
-      addLog('Permission not granted yet — tap "Allow notifications"', 'warn');
-      return;
-    }
-    await Notifications.scheduleNotificationAsync({
-      content: {
-        title: 'Netflix renews tomorrow',
-        body: '€13.99 will be charged on your card.',
-        sound: true,
-      },
-      trigger: {
-        type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
-        seconds,
-        repeats: false,
-      },
-    });
-    const count = await refreshScheduled();
-    addLog(`Scheduled for +${seconds}s (${count} pending)`, 'ok');
-  };
-
-  const cancelAll = async () => {
-    tap();
-    await Notifications.cancelAllScheduledNotificationsAsync();
-    await refreshScheduled();
-    addLog('Cancelled all scheduled notifications', 'info');
   };
 
   return (
-    <SafeAreaView style={styles.safe}>
-      <ScrollView contentContainerStyle={styles.scroll}>
-        <Text style={styles.eyebrow}>PHASE 0 · SMOKE TEST</Text>
-        <Text style={styles.title}>Subscriptions</Text>
-
-        <View style={[styles.probe, { backgroundColor: PROBE_COLOR }]}>
-          <Text style={styles.probeLabel}>hot reload probe</Text>
-          <Text style={styles.probeValue}>{HOT_RELOAD_PROBE}</Text>
-        </View>
-
-        <View style={styles.card}>
-          <Row label="Platform" value={`${Platform.OS} ${Platform.Version}`} />
-          <Row label="Running in" value={isExpoGo ? 'Expo Go' : 'standalone build'} />
-          <Row
-            label="Notifications"
-            value={permission}
-            tone={permission === 'granted' ? 'ok' : 'warn'}
-          />
-          <Row
-            label="Pending"
-            value={scheduledCount === null ? '—' : String(scheduledCount)}
-          />
-        </View>
-
-        <Button label="Allow notifications" onPress={requestPermission} primary />
-        <Button label="Fire a reminder in 10 seconds" onPress={() => schedule(10)} />
-        <Button label="Fire a reminder in 60 seconds" onPress={() => schedule(60)} />
-        <Button label="Cancel all pending" onPress={cancelAll} subdued />
-
-        <Text style={styles.hint}>
-          For the real test: tap the 60-second button, then lock your phone or
-          switch to another app. The notification should still arrive.
+    <SafeAreaView style={styles.safe} edges={['top']}>
+      <View style={styles.header}>
+        <Text style={styles.eyebrow}>PHASE 2 · CATALOGUE &amp; STORAGE</Text>
+        <Text style={styles.title}>{BRANDS.length} brands</Text>
+        <Text style={styles.subtitle}>
+          {BRANDS.length - noLogoCount} real logos · {noLogoCount} monogram tiles
         </Text>
 
-        <Text style={styles.logTitle}>Log</Text>
-        {log.length === 0 ? (
-          <Text style={styles.logEmpty}>Nothing yet.</Text>
+        <TextInput
+          value={query}
+          onChangeText={setQuery}
+          placeholder="Search brands…"
+          placeholderTextColor="#5A6875"
+          autoCorrect={false}
+          autoCapitalize="none"
+          style={styles.search}
+        />
+      </View>
+
+      <ScrollView contentContainerStyle={styles.scroll} keyboardDismissMode="on-drag">
+        <View style={styles.savedCard}>
+          <Text style={styles.sectionLabel}>PERSISTENCE PROBE</Text>
+          <Text style={styles.savedHint}>
+            {hydrated ? 'Loaded from storage.' : 'Loading…'} Tap any tile below to save
+            it, then force-quit the app and reopen — these should survive.
+          </Text>
+
+          {subscriptions.length === 0 ? (
+            <Text style={styles.empty}>Nothing saved yet.</Text>
+          ) : (
+            <>
+              <Text style={styles.totalLine}>
+                {subscriptions.length} saved · {formatMoney(totals.monthly)}/mo ·{' '}
+                {formatMoney(totals.yearly)}/yr
+              </Text>
+              {subscriptions.map((sub) => (
+                <Pressable
+                  key={sub.id}
+                  onPress={() => {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                    removeSubscription(sub.id);
+                  }}
+                  style={({ pressed }) => [styles.savedRow, pressed && styles.pressed]}>
+                  <BrandIcon brandId={sub.brandId} name={sub.name} size={34} />
+                  <View style={styles.savedText}>
+                    <Text style={styles.savedName}>{sub.name}</Text>
+                    <Text style={styles.savedMeta}>
+                      {formatMoney(sub.price)} · monthly · next {sub.anchorDate}
+                    </Text>
+                  </View>
+                  <Text style={styles.remove}>Remove</Text>
+                </Pressable>
+              ))}
+            </>
+          )}
+        </View>
+
+        {query === '' ? (
+          CATEGORIES.map((category) => {
+            const inCategory = BRANDS.filter((b) => b.category === category);
+            if (inCategory.length === 0) return null;
+            return (
+              <View key={category} style={styles.section}>
+                <Text style={styles.sectionLabel}>
+                  {category.toUpperCase()} · {inCategory.length}
+                </Text>
+                <View style={styles.grid}>
+                  {inCategory.map((brand) => (
+                    <Tile
+                      key={brand.id}
+                      id={brand.id}
+                      title={brand.title}
+                      hex={brand.hex}
+                      onPress={handleAdd}
+                    />
+                  ))}
+                </View>
+              </View>
+            );
+          })
         ) : (
-          log.map((entry, i) => (
-            <View key={`${entry.at}-${i}`} style={styles.logRow}>
-              <Text style={styles.logTime}>{entry.at}</Text>
-              <Text style={[styles.logText, styles[entry.kind]]}>{entry.text}</Text>
+          <View style={styles.section}>
+            <Text style={styles.sectionLabel}>{results.length} RESULTS</Text>
+            <View style={styles.grid}>
+              {results.map((brand) => (
+                <Tile
+                  key={brand.id}
+                  id={brand.id}
+                  title={brand.title}
+                  hex={brand.hex}
+                  onPress={handleAdd}
+                />
+              ))}
             </View>
-          ))
+            {results.length === 0 && (
+              <Text style={styles.empty}>
+                No brand matches “{query}”. In the real app this becomes a
+                &ldquo;create custom&rdquo; tile.
+              </Text>
+            )}
+          </View>
         )}
       </ScrollView>
     </SafeAreaView>
   );
 }
 
-function Row({
-  label,
-  value,
-  tone,
-}: {
-  label: string;
-  value: string;
-  tone?: 'ok' | 'warn';
-}) {
-  return (
-    <View style={styles.row}>
-      <Text style={styles.rowLabel}>{label}</Text>
-      <Text style={[styles.rowValue, tone === 'ok' && styles.ok, tone === 'warn' && styles.warn]}>
-        {value}
-      </Text>
-    </View>
-  );
-}
-
-function Button({
-  label,
+function Tile({
+  id,
+  title,
+  hex,
   onPress,
-  primary,
-  subdued,
 }: {
-  label: string;
-  onPress: () => void;
-  primary?: boolean;
-  subdued?: boolean;
+  id: string;
+  title: string;
+  hex: string;
+  onPress: (id: string, title: string, hex: string) => void;
 }) {
   return (
     <Pressable
-      onPress={onPress}
-      style={({ pressed }) => [
-        styles.button,
-        primary && styles.buttonPrimary,
-        subdued && styles.buttonSubdued,
-        pressed && styles.buttonPressed,
-      ]}>
-      <Text style={[styles.buttonText, subdued && styles.buttonTextSubdued]}>{label}</Text>
+      onPress={() => onPress(id, title, hex)}
+      style={({ pressed }) => [styles.tile, pressed && styles.pressed]}>
+      <BrandIcon brandId={id} name={title} size={54} />
+      <Text numberOfLines={2} style={styles.tileLabel}>
+        {title}
+      </Text>
     </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: '#0F1319' },
-  scroll: { padding: 20, paddingBottom: 48, gap: 12 },
+  header: { paddingHorizontal: 20, paddingBottom: 12 },
   eyebrow: { color: '#6B7C8C', fontSize: 11, letterSpacing: 1.5, fontWeight: '700' },
-  title: { color: '#F2F5F7', fontSize: 34, fontWeight: '800', marginBottom: 8 },
-
-  probe: { borderRadius: 18, padding: 18, marginBottom: 4 },
-  probeLabel: { color: '#C8D6E0', fontSize: 11, letterSpacing: 1.2, fontWeight: '700' },
-  probeValue: { color: '#FFFFFF', fontSize: 22, fontWeight: '700', marginTop: 4 },
-
-  card: {
+  title: { color: '#F2F5F7', fontSize: 30, fontWeight: '800', marginTop: 2 },
+  subtitle: { color: '#8496A6', fontSize: 13, marginTop: 2 },
+  search: {
+    marginTop: 14,
     backgroundColor: '#161C24',
-    borderRadius: 18,
-    padding: 4,
+    borderRadius: 12,
     borderWidth: 1,
     borderColor: '#222B36',
-  },
-  row: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingVertical: 12,
     paddingHorizontal: 14,
+    paddingVertical: 11,
+    color: '#F2F5F7',
+    fontSize: 15,
   },
-  rowLabel: { color: '#8496A6', fontSize: 14 },
-  rowValue: { color: '#E8EEF3', fontSize: 14, fontWeight: '600' },
-  ok: { color: '#5BD99A' },
-  warn: { color: '#F0B450' },
-  info: { color: '#A9BAC8' },
 
-  button: {
-    backgroundColor: '#1B242E',
-    borderRadius: 14,
-    paddingVertical: 15,
-    alignItems: 'center',
+  scroll: { paddingHorizontal: 20, paddingBottom: 48, gap: 22 },
+
+  savedCard: {
+    backgroundColor: '#161C24',
+    borderRadius: 16,
     borderWidth: 1,
-    borderColor: '#2A3542',
+    borderColor: '#222B36',
+    padding: 14,
+    gap: 8,
   },
-  buttonPrimary: { backgroundColor: '#3D596D', borderColor: '#4E6E85' },
-  buttonSubdued: { backgroundColor: 'transparent', borderColor: '#2A3542' },
-  buttonPressed: { opacity: 0.65 },
-  buttonText: { color: '#F2F5F7', fontSize: 15, fontWeight: '600' },
-  buttonTextSubdued: { color: '#8496A6' },
+  savedHint: { color: '#8496A6', fontSize: 12, lineHeight: 18 },
+  totalLine: { color: '#5BD99A', fontSize: 13, fontWeight: '700' },
+  savedRow: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 6 },
+  savedText: { flex: 1 },
+  savedName: { color: '#E8EEF3', fontSize: 14, fontWeight: '600' },
+  savedMeta: { color: '#6B7C8C', fontSize: 11, marginTop: 1 },
+  remove: { color: '#E5737B', fontSize: 12, fontWeight: '600' },
 
-  hint: {
-    color: '#6B7C8C',
-    fontSize: 13,
-    lineHeight: 19,
-    marginTop: 4,
-    marginBottom: 8,
-  },
+  section: { gap: 10 },
+  sectionLabel: { color: '#6B7C8C', fontSize: 11, letterSpacing: 1.4, fontWeight: '700' },
+  grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
+  tile: { width: 72, alignItems: 'center', gap: 6 },
+  tileLabel: { color: '#A9BAC8', fontSize: 10, textAlign: 'center', lineHeight: 13 },
+  pressed: { opacity: 0.6 },
 
-  logTitle: {
-    color: '#6B7C8C',
-    fontSize: 11,
-    letterSpacing: 1.5,
-    fontWeight: '700',
-    marginTop: 8,
-  },
-  logEmpty: { color: '#4A5765', fontSize: 13, fontStyle: 'italic' },
-  logRow: { flexDirection: 'row', gap: 10, paddingVertical: 3 },
-  logTime: { color: '#4A5765', fontSize: 12, fontVariant: ['tabular-nums'] },
-  logText: { color: '#A9BAC8', fontSize: 12, flex: 1 },
+  empty: { color: '#5A6875', fontSize: 13, fontStyle: 'italic' },
 });
