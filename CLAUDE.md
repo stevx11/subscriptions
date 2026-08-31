@@ -2,11 +2,15 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-## Read this first: Expo has changed
+## Read this first: the SDK version is pinned, and it is not the latest
 
-This project is on **Expo SDK 57** (React Native 0.86, React 19.2, TypeScript 6). That is newer than most training data, and the APIs have moved — `setNotificationHandler` no longer takes `shouldShowAlert`, triggers are now typed via `SchedulableTriggerInputTypes`, routes live in `src/app/`, and the New Architecture is on by default.
+This project is on **Expo SDK 54** (React Native 0.81.5, React 19.1, TypeScript 5.9) — deliberately, and it must stay there.
 
-**Check the versioned docs before writing Expo code from memory:** https://docs.expo.dev/versions/v57.0.0/
+**Do not upgrade the Expo SDK.** The user's iPhone runs an iOS version old enough that the App Store only offers them an Expo Go build supporting **up to SDK 54**. Anything newer simply refuses to open on their phone. `npx expo install --fix` and "upgrade to latest" advice will break the only way this app can be run. If an upgrade ever becomes desirable, confirm what their Expo Go supports *first*.
+
+The APIs here have also moved from what older training data suggests — `setNotificationHandler` takes `shouldShowBanner`/`shouldShowList` (not `shouldShowAlert`), triggers are typed via `SchedulableTriggerInputTypes`, routes live in `src/app/`, and the New Architecture is on.
+
+**Check the versioned docs before writing Expo code from memory:** https://docs.expo.dev/versions/v54.0.0/
 
 ## What this is
 
@@ -85,6 +89,6 @@ The repository lives on the `main` branch. **Commit regularly and in small, self
 
 ## Build plan
 
-The project is being built in phases, one at a time, each ending with something the user can try on their phone. The full plan is at `C:\Users\Stevo\.claude\plans\crystalline-snacking-pinwheel.md`. Current status: **Phase 0 complete** (toolchain, Expo Go, notification smoke test).
+The project is being built in phases, one at a time, each ending with something the user can try on their phone. The full plan is at `C:\Users\Stevo\.claude\plans\crystalline-snacking-pinwheel.md`. Current status: **Phase 0** — scaffold builds on Windows; awaiting on-device confirmation from the user.
 
 `src/app/index.tsx` is currently a throwaway Phase 0 diagnostic screen and gets replaced in Phase 1.
