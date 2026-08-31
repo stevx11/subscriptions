@@ -6,8 +6,11 @@ import {
   daysBetween,
   daysInMonth,
   formatIsoDate,
+  formatDateLong,
+  formatDateShort,
   fromEpochDay,
   isLeapYear,
+  ordinalSuffix,
   parseIsoDate,
   toEpochDay,
   todayIso,
@@ -173,5 +176,55 @@ describe('todayIso', () => {
 describe('formatIsoDate', () => {
   it('pads all components', () => {
     expect(formatIsoDate({ year: 26, month: 1, day: 2 })).toBe('0026-01-02');
+  });
+});
+
+describe('ordinalSuffix', () => {
+  it.each([
+    [1, 'st'],
+    [2, 'nd'],
+    [3, 'rd'],
+    [4, 'th'],
+    [10, 'th'],
+    [21, 'st'],
+    [22, 'nd'],
+    [23, 'rd'],
+    [31, 'st'],
+  ])('%i takes %s', (day, expected) => {
+    expect(ordinalSuffix(day)).toBe(expected);
+  });
+
+  it('handles the 11-13 exception, which breaks the digit rule', () => {
+    expect(ordinalSuffix(11)).toBe('th');
+    expect(ordinalSuffix(12)).toBe('th');
+    expect(ordinalSuffix(13)).toBe('th');
+  });
+});
+
+describe('formatDateLong', () => {
+  it('formats a date in the current year without the year', () => {
+    expect(formatDateLong('2026-09-03', '2026-09-01')).toBe('3rd of September');
+    expect(formatDateLong('2026-08-05', '2026-09-01')).toBe('5th of August');
+  });
+
+  it('appends the year when it differs from the reference', () => {
+    expect(formatDateLong('2027-01-22', '2026-09-01')).toBe('22nd of January 2027');
+  });
+
+  it.each([
+    ['2026-09-01', '1st of September'],
+    ['2026-09-02', '2nd of September'],
+    ['2026-09-11', '11th of September'],
+    ['2026-09-21', '21st of September'],
+    ['2026-12-31', '31st of December'],
+  ])('formats %s as %s', (date, expected) => {
+    expect(formatDateLong(date, '2026-09-01')).toBe(expected);
+  });
+});
+
+describe('formatDateShort', () => {
+  it('abbreviates the month', () => {
+    expect(formatDateShort('2026-09-03')).toBe('3 Sep');
+    expect(formatDateShort('2026-01-15')).toBe('15 Jan');
   });
 });

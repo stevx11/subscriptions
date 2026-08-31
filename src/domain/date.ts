@@ -155,3 +155,59 @@ export function todayIso(now: Date = new Date()): IsoDate {
     day: now.getDate(),
   });
 }
+
+const MONTH_NAMES = [
+  'January',
+  'February',
+  'March',
+  'April',
+  'May',
+  'June',
+  'July',
+  'August',
+  'September',
+  'October',
+  'November',
+  'December',
+] as const;
+
+/**
+ * English ordinal suffix. The 11-13 exception is the whole reason this is a
+ * function and not `day + 'th'`: 11th, 12th and 13th break the digit rule that
+ * otherwise gives 1st, 2nd, 3rd.
+ */
+export function ordinalSuffix(day: number): string {
+  if (day >= 11 && day <= 13) {
+    return 'th';
+  }
+  switch (day % 10) {
+    case 1:
+      return 'st';
+    case 2:
+      return 'nd';
+    case 3:
+      return 'rd';
+    default:
+      return 'th';
+  }
+}
+
+/**
+ * "3rd of September", with the year appended only when it differs from the
+ * reference date's — a renewal next month does not need a year, one in 2028
+ * very much does.
+ *
+ * Hand-rolled rather than using Intl: this must be deterministic across
+ * devices and testable on Windows, and Hermes' ICU data varies by platform.
+ */
+export function formatDateLong(date: IsoDate, reference: IsoDate = todayIso()): string {
+  const { year, month, day } = parseIsoDate(date);
+  const base = `${day}${ordinalSuffix(day)} of ${MONTH_NAMES[month - 1]}`;
+  return year === parseIsoDate(reference).year ? base : `${base} ${year}`;
+}
+
+/** "3 Sep" — for dense rows where the long form would wrap. */
+export function formatDateShort(date: IsoDate): string {
+  const { month, day } = parseIsoDate(date);
+  return `${day} ${MONTH_NAMES[month - 1].slice(0, 3)}`;
+}

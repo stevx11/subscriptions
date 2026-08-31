@@ -7,7 +7,7 @@ import { getBrand } from '@/data/brands';
 import { sampleSubscriptions } from '@/data/sampleData';
 import { useAppStore } from '@/data/store';
 import { describeCycle } from '@/domain/cycle';
-import { todayIso } from '@/domain/date';
+import { formatDateLong, formatDateShort, todayIso } from '@/domain/date';
 import { formatMoney } from '@/domain/money';
 import {
   daysUntilNextBilling,
@@ -183,7 +183,7 @@ function NextUpCard({ entry }: { entry: UpcomingEntry }) {
       </View>
 
       <View style={styles.heroBottom}>
-        <View>
+        <View style={styles.heroAmountBlock}>
           <Txt variant="display" style={styles.heroAmount}>
             {formatMoney(subscription.price)}
           </Txt>
@@ -192,12 +192,14 @@ function NextUpCard({ entry }: { entry: UpcomingEntry }) {
           </Txt>
         </View>
         <View style={styles.heroWhen}>
+          {entry.date && (
+            <Txt variant="heading" style={styles.heroDate} numberOfLines={1}>
+              {formatDateLong(entry.date)}
+            </Txt>
+          )}
           <Pill accent={urgent ? palette.warning : accent} tone={urgent ? 'warning' : 'accent'}>
             {relativeDay(days)}
           </Pill>
-          <Txt variant="label" color={palette.textFaint} style={styles.heroDate}>
-            {entry.date}
-          </Txt>
         </View>
       </View>
     </Card>
@@ -220,7 +222,8 @@ function UpcomingRow({ entry }: { entry: UpcomingEntry }) {
           {subscription.name}
         </Txt>
         <Txt variant="label" color={palette.textFaint}>
-          {describeCycle(subscription.cycle)} · {relativeDay(days)}
+          {entry.date ? formatDateShort(entry.date) : describeCycle(subscription.cycle)} ·{' '}
+          {relativeDay(days)}
         </Txt>
       </View>
 
@@ -274,8 +277,11 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   heroAmount: { fontSize: 34, letterSpacing: -1 },
-  heroWhen: { alignItems: 'flex-end', gap: spacing.xs },
-  heroDate: { fontVariant: ['tabular-nums'] },
+  heroAmountBlock: { flexShrink: 1 },
+  heroWhen: { alignItems: 'flex-end', gap: spacing.sm, flexShrink: 0 },
+  // The date is the payload of this card — when the money actually leaves —
+  // so it gets full-strength text, not the muted treatment of a caption.
+  heroDate: { fontSize: 19, letterSpacing: -0.3 },
 
   row: {
     flexDirection: 'row',
