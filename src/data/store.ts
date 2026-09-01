@@ -17,30 +17,15 @@ import * as Crypto from 'expo-crypto';
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 
-import { CurrencyCode } from '@/domain/currency';
 import { RateTable } from '@/domain/fx';
 import { Subscription, SubscriptionStatus } from '@/domain/subscription';
 import { todayIso } from '@/domain/date';
 import { CURRENT_SCHEMA_VERSION, migrateState, PersistedShape } from './migrations';
+import { DEFAULT_SETTINGS, Settings } from './settings';
 
-export interface Settings {
-  homeCurrency: CurrencyCode;
-  /** Default days before a charge to remind, when a subscription has no override. */
-  defaultReminderDays: number;
-  /** Whether reminders are scheduled at all. */
-  remindersEnabled: boolean;
-  /** Local hour of day reminders fire, 0-23. */
-  reminderHour: number;
-}
+export { DEFAULT_SETTINGS };
+export type { Settings };
 
-export const DEFAULT_SETTINGS: Settings = {
-  homeCurrency: 'EUR',
-  defaultReminderDays: 2,
-  // Off until the user opts in: iOS only ever shows the permission prompt
-  // once, so it must follow a deliberate action rather than app launch.
-  remindersEnabled: false,
-  reminderHour: 9,
-};
 
 /** What a caller supplies when creating a subscription; the rest is derived. */
 export type NewSubscription = Omit<

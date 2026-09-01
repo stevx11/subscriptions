@@ -6,16 +6,20 @@
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "subscriptions",
-    "userInterfaceStyle": "automatic",
+    "userInterfaceStyle": "dark",
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": false,
-      "bundleIdentifier": "com.personal.subscriptions"
+      "bundleIdentifier": "com.personal.subscriptions",
+      "buildNumber": "1",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "package": "com.personal.subscriptions",
       "adaptiveIcon": {
-        "backgroundColor": "#0F1319",
+        "backgroundColor": "#0A0D12",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
         "backgroundImage": "./assets/images/android-icon-background.png",
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
@@ -28,15 +32,21 @@
     },
     "plugins": [
       "expo-router",
+      "expo-font",
       [
         "expo-splash-screen",
         {
-          "backgroundColor": "#0F1319",
+          "backgroundColor": "#0A0D12",
           "image": "./assets/images/splash-icon.png",
-          "imageWidth": 76
+          "imageWidth": 140
         }
       ],
-      "expo-font"
+      [
+        "expo-notifications",
+        {
+          "color": "#4C8FE0"
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,

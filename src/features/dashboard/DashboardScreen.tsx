@@ -5,7 +5,6 @@ import * as Haptics from 'expo-haptics';
 import Svg, { Defs, LinearGradient, Rect, Stop } from 'react-native-svg';
 
 import { getBrand } from '@/data/brands';
-import { sampleSubscriptions } from '@/data/sampleData';
 import { useAppStore } from '@/data/store';
 import { useRates } from '@/data/useRates';
 import { describeCycle } from '@/domain/cycle';
@@ -59,7 +58,6 @@ export function DashboardScreen() {
   const subscriptions = useAppStore((state) => state.subscriptions);
   const settings = useAppStore((state) => state.settings);
   const rates = useAppStore((state) => state.rates);
-  const addSubscription = useAppStore((state) => state.addSubscription);
   const rateStatus = useRates();
   const reminders = useReminders();
 
@@ -99,9 +97,7 @@ export function DashboardScreen() {
   );
 
   if (subscriptions.length === 0) {
-    return (
-      <EmptyState onAddSamples={() => sampleSubscriptions().forEach(addSubscription)} />
-    );
+    return <EmptyState />;
   }
 
   return (
@@ -408,7 +404,7 @@ function PausedRow({ subscription }: { subscription: Subscription }) {
   );
 }
 
-function EmptyState({ onAddSamples }: { onAddSamples: () => void }) {
+function EmptyState() {
   return (
     <View style={styles.root}>
       <Screen>
@@ -428,16 +424,9 @@ function EmptyState({ onAddSamples }: { onAddSamples: () => void }) {
               Add a subscription
             </Txt>
           </Pressable>
-          <Pressable
-            onPress={() => {
-              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-              onAddSamples();
-            }}
-            style={({ pressed }) => [styles.textButton, pressed && styles.pressed]}>
-            <Txt variant="label" color={palette.textFaint}>
-              Or load sample data
-            </Txt>
-          </Pressable>
+          <Txt variant="label" color={palette.textFaint} style={styles.textButton}>
+            Sample data is under Settings if you want to look around first.
+          </Txt>
         </View>
       </Screen>
     </View>
