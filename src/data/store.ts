@@ -12,6 +12,7 @@
  * home currency never rewrites stored data and can never corrupt it.
  */
 
+import { useEffect, useState } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Crypto from 'expo-crypto';
 import { create } from 'zustand';
@@ -37,8 +38,6 @@ interface AppState {
   subscriptions: Subscription[];
   settings: Settings;
   rates: RateTable | null;
-  /** False until the persisted state has been read back from disk. */
-  hydrated: boolean;
 
   addSubscription: (input: NewSubscription) => Subscription;
   updateSubscription: (id: string, changes: Partial<Subscription>) => void;
@@ -64,7 +63,6 @@ export const useAppStore = create<AppState>()(
       subscriptions: [],
       settings: DEFAULT_SETTINGS,
       rates: null,
-      hydrated: false,
 
       addSubscription: (input) => {
         const timestamp = nowIso();
@@ -168,15 +166,34 @@ export const useAppStore = create<AppState>()(
       },
       migrate: (persisted, version) =>
         migrateState(persisted as PersistedShape, version) as never,
-      onRehydrateStorage: () => (state) => {
-        // Marks the app safe to render real data. Without this, the first
-        // frame renders an empty list and then pops in the real one.
-        useAppStore.setState({ hydrated: true });
-        void state;
-      },
     },
   ),
 );
+
+/**
+ * Whether the persisted state has been read back from disk yet.
+ *
+ * Deliberately *not* a field on the store. Zustand's persist middleware writes
+ * storage on every `setState`, so flipping a `hydrated` flag from inside
+ * `onRehydrateStorage` triggers a pointless write on every launch — and blows
+ * up outright anywhere storage is unavailable, such as the Node process that
+ * prerenders the web build. Reading the middleware's own hydration state avoids
+ * touching the store at all.
+ */
+export function useHydrated(): boolean {
+  const [hydrated, setHydrated] = useState(() => useAppStore.persist.hasHydrated());
+
+  useEffect(() => {
+    const unsubscribe = useAppStore.persist.onFinishHydration(() => setHydrated(true));
+    // Hydration may have completed between the initial render and this effect.
+    if (useAppStore.persist.hasHydrated()) {
+      setHydrated(true);
+    }
+    return unsubscribe;
+  }, []);
+
+  return hydrated;
+}
 
 /** Selectors — kept here so components never re-implement filtering rules. */
 export const selectActive = (state: AppState) =>

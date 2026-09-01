@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { AppState } from 'react-native';
 
-import { useAppStore } from '@/data/store';
+import { useAppStore, useHydrated } from '@/data/store';
 import { todayIso } from '@/domain/date';
 import { planReminders, planSignature, ReminderPlan } from './plan';
 import { applyPlan, hasPermission, requestPermission } from './scheduler';
@@ -58,7 +58,7 @@ export interface RemindersState {
 export function useReminders(): RemindersState {
   const subscriptions = useAppStore((state) => state.subscriptions);
   const settings = useAppStore((state) => state.settings);
-  const hydrated = useAppStore((state) => state.hydrated);
+  const hydrated = useHydrated();
   const updateSettings = useAppStore((state) => state.updateSettings);
 
   const [permitted, setPermitted] = useState(false);

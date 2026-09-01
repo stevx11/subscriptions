@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 
 import { isRateTableStale } from '@/domain/fx';
 import { fetchRateTable } from './rates';
-import { useAppStore } from './store';
+import { useAppStore, useHydrated } from './store';
 
 export type RateStatus = 'idle' | 'refreshing' | 'offline';
 
@@ -20,7 +20,7 @@ export type RateStatus = 'idle' | 'refreshing' | 'offline';
 export function useRates(): RateStatus {
   const rates = useAppStore((state) => state.rates);
   const homeCurrency = useAppStore((state) => state.settings.homeCurrency);
-  const hydrated = useAppStore((state) => state.hydrated);
+  const hydrated = useHydrated();
   const setRates = useAppStore((state) => state.setRates);
 
   const [status, setStatus] = useState<RateStatus>('idle');
