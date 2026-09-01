@@ -1,5 +1,14 @@
 import { useMemo, useState } from 'react';
-import { Modal, Pressable, ScrollView, StyleSheet, Switch, TextInput, View } from 'react-native';
+import {
+  Alert,
+  Modal,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Switch,
+  TextInput,
+  View,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 
@@ -52,12 +61,15 @@ export function SubscriptionFormScreen({
   setDraft,
   onSave,
   onCancel,
+  onDelete,
   mode,
 }: {
   draft: Draft;
   setDraft: (next: Draft) => void;
   onSave: () => void;
   onCancel: () => void;
+  /** Only supplied in edit mode; adding has nothing to delete yet. */
+  onDelete?: () => void;
   mode: 'add' | 'edit';
 }) {
   const [showCurrencies, setShowCurrencies] = useState(false);
@@ -71,6 +83,28 @@ export function SubscriptionFormScreen({
   const canSave = isDraftValid(draft, today);
 
   const patch = (changes: Partial<Draft>) => setDraft({ ...draft, ...changes });
+
+  const handleDelete = () => {
+    if (!onDelete) return;
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    // Deleting loses price history too, and there is no undo yet, so this
+    // confirms rather than acting on a single tap.
+    Alert.alert(
+      `Delete ${draft.name || 'this subscription'}?`,
+      'This removes it and its price history. It cannot be undone.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: () => {
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+            onDelete();
+          },
+        },
+      ],
+    );
+  };
 
   const handleSave = () => {
     setAttempted(true);
@@ -226,6 +260,16 @@ export function SubscriptionFormScreen({
             multiline
           />
         </Field>
+
+        {onDelete && (
+          <Pressable
+            onPress={handleDelete}
+            style={({ pressed }) => [styles.deleteButton, pressed && styles.pressed]}>
+            <Txt variant="label" color={palette.danger}>
+              Delete subscription
+            </Txt>
+          </Pressable>
+        )}
       </ScrollView>
 
       <CurrencySheet
@@ -457,6 +501,15 @@ const styles = StyleSheet.create({
   },
   currencyText: { flex: 1 },
 
+  deleteButton: {
+    alignItems: 'center',
+    paddingVertical: spacing.lg,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    borderColor: withAlpha(palette.danger, 0.35),
+    backgroundColor: withAlpha(palette.danger, 0.08),
+    marginTop: spacing.sm,
+  },
   errorRow: { marginTop: -spacing.md },
   pressed: { opacity: 0.6 },
 });

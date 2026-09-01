@@ -15,6 +15,7 @@ export default function EditSubscription() {
   const subscription = useAppStore((state) => state.subscriptions.find((s) => s.id === id));
   const homeCurrency = useAppStore((state) => state.settings.homeCurrency);
   const updateSubscription = useAppStore((state) => state.updateSubscription);
+  const removeSubscription = useAppStore((state) => state.removeSubscription);
 
   const [draft, setDraft] = useState<Draft>(() =>
     subscription ? draftFromSubscription(subscription) : emptyDraft(homeCurrency),
@@ -31,6 +32,10 @@ export default function EditSubscription() {
       draft={draft}
       setDraft={setDraft}
       onCancel={() => router.back()}
+      onDelete={() => {
+        removeSubscription(subscription.id);
+        router.back();
+      }}
       onSave={() => {
         const next = toNewSubscription(draft);
         updateSubscription(subscription.id, {
