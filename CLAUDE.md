@@ -21,7 +21,9 @@ A personal subscription tracker for one person's iPhone. Single user, no account
 Development happens entirely on Windows. There is no Mac and no Xcode — that is a hard constraint, not a preference, and it is why this is an Expo project rather than the SwiftUI app that used to live here (see commit `4825b43`).
 
 - **During development** the app runs in **Expo Go** on the user's iPhone. `npm start`, scan the QR, changes appear in about a second.
-- **For the finished app** a cloud build produces an `.ipa` that gets sideloaded via AltStore/Sideloadly with a free Apple ID. The $99/yr Apple Developer Program is optional (it removes the 7-day re-sign cycle) and requires no code changes.
+- **For the finished app** a cloud build produces an `.ipa` that gets sideloaded via AltStore/Sideloadly.
+
+**EAS cannot build this for free.** Its internal-distribution profile requires a paid Apple Developer account, because the ad hoc provisioning profile it needs can only be issued by one — an Apple restriction, not an Expo one. The free route is `.github/workflows/ios-unsigned-ipa.yml`, which compiles *unsigned* on a GitHub macOS runner and leaves signing to Sideloadly on the user's PC. `SIDELOADING.md` covers both routes.
 
 ## Commands
 
@@ -111,6 +113,6 @@ Built in phases, one at a time, each ending with something the user tries on the
 
 **All ten phases are complete.** 0 toolchain · 1 domain core · 2 catalogue + storage · 3 design system · 4 add/edit · 5 dashboard + live FX · 6 list + detail · 7 reminders · 8 insights · 9 settings + backup · 10 icons, EAS config and the sideloading guide.
 
-The remaining step is not code: the user runs `eas build --platform ios --profile preview` under their own Expo account and sideloads the result. `SIDELOADING.md` is the walkthrough. That build cannot be run from here — it needs their account.
+The remaining step is not code: the user builds an `.ipa` and sideloads it. That cannot be run from here — it needs their GitHub or Expo account. `SIDELOADING.md` is the walkthrough.
 
 `src/data/sampleData.ts` is reachable from Settings and exists only for evaluating screens against realistic data.

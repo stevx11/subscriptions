@@ -21,7 +21,35 @@ Neither step needs you to own a Mac.
 
 ## Step 1 — Build the `.ipa`
 
-You need a free Expo account (email only, no card).
+There are two routes, and which one you take depends on one thing only: whether
+you are willing to pay Apple.
+
+### The free route — GitHub Actions (recommended to try first)
+
+**EAS cannot do this for free.** Its "internal distribution" build requires a
+paid Apple Developer account, because the ad hoc provisioning profile it needs
+can only be issued by one. A free Apple ID cannot produce one. That is an Apple
+restriction, not an Expo one.
+
+The way around it is to compile **without signing at all**, and let Sideloadly
+sign the result on your PC with your free Apple ID at install time — which is
+exactly what those tools are for.
+
+`.github/workflows/ios-unsigned-ipa.yml` does this on GitHub's free macOS
+runners:
+
+1. Push this repository to GitHub.
+2. Open the **Actions** tab → **Build unsigned iOS .ipa** → **Run workflow**.
+3. Wait ~15 minutes, then download the `Subscriptions-unsigned-ipa` artifact.
+
+The build minutes: **public repositories are unlimited.** Private ones get 2,000
+free minutes a month, but macOS is billed at a **10× multiplier**, so it is
+really about 200 macOS minutes — roughly ten builds a month. Enough for a
+personal app, but not unlimited.
+
+### The paid route — EAS ($99/yr)
+
+If you enrol in the Apple Developer Program, everything gets simpler:
 
 ```sh
 npm install -g eas-cli
@@ -29,29 +57,22 @@ eas login
 eas build --platform ios --profile preview
 ```
 
-The `preview` profile is already configured in `eas.json`. What each profile is
-for — `eas.json` is strict JSON and rejects unknown keys, so it cannot carry
-comments of its own:
+EAS handles the certificate and provisioning profile itself, the app lasts a
+year instead of seven days, and you can use TestFlight instead of sideloading
+altogether.
 
-| Profile | What it builds |
+| Profile in `eas.json` | What it builds |
 |---|---|
-| `preview` | `distribution: internal` — the sideloadable `.ipa`. **This is the one you want.** |
-| `simulator` | An `.app` for the iOS Simulator. Needs no signing credentials, but is useless without a Mac. |
-| `production` | A store build. Only relevant with a paid Apple Developer account. |
+| `preview` | `distribution: internal` — the sideloadable `.ipa`. Needs the paid account. |
+| `simulator` | An `.app` for the iOS Simulator. No credentials needed, but useless without a Mac. |
+| `production` | A store build. |
 
-EAS will ask about signing credentials. What you pick determines how the next
-step works:
+### Or: change nothing
 
-| If you have | Answer | Result |
-|---|---|---|
-| No Apple Developer account | Let EAS build **unsigned**, or use your free Apple ID | You re-sign locally with Sideloadly. App expires every **7 days**. |
-| A paid account ($99/yr) | Let EAS handle signing with your account | App lasts **1 year**, no weekly refresh. |
-
-The free tier has a monthly build quota and you may wait in a queue at busy
-times. For a personal app you'll build this a handful of times, so it is not a
-practical limit.
-
-When it finishes, EAS gives you a URL — download the `.ipa` to your PC.
+Expo Go already runs this app on your phone, for free, with no expiry and no
+build step. The only thing a standalone build buys you is a dedicated home
+screen icon and not having to open Expo Go first. That is a real convenience,
+but it is the *only* difference — weigh it against a 7-day re-signing chore.
 
 ---
 
@@ -106,13 +127,9 @@ Free Apple IDs are also capped at **3 sideloaded apps** at a time.
 
 ## Updating the app later
 
-Change the code, then:
-
-```sh
-eas build --platform ios --profile preview
-```
-
-and reinstall the new `.ipa` the same way. Your data survives a reinstall over
+Change the code, then re-run whichever build route you used — the GitHub Action,
+or `eas build --platform ios --profile preview` — and reinstall the new `.ipa`
+the same way. Your data survives a reinstall over
 the top; it does **not** survive deleting the app first. Export a backup before
 any reinstall you are unsure about.
 
