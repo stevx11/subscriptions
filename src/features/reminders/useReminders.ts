@@ -1,10 +1,34 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { AppState } from 'react-native';
 
 import { useAppStore } from '@/data/store';
 import { todayIso } from '@/domain/date';
 import { planReminders, planSignature, ReminderPlan } from './plan';
 import { applyPlan, hasPermission, requestPermission } from './scheduler';
+
+/**
+ * Scheduling state is module-level, not per-hook.
+ *
+ * The hook is mounted by more than one screen (the dashboard card and the
+ * settings toggle). With a per-instance ref, each mount would independently
+ * cancel and rewrite the whole schedule, and two overlapping runs can
+ * interleave — one instance's `cancelAll` landing after the other has already
+ * scheduled, leaving no reminders at all. A shared signature plus a serialising
+ * promise chain makes the sync idempotent no matter how many callers there are.
+ */
+let appliedSignature: string | null = null;
+let pending: Promise<unknown> = Promise.resolve();
+
+function serialise<T>(work: () => Promise<T>): Promise<T> {
+  const next = pending.then(work, work);
+  pending = next.catch(() => undefined);
+  return next;
+}
+
+/** Forces the next sync to run even if the plan text is unchanged. */
+function invalidate(): void {
+  appliedSignature = null;
+}
 
 export interface RemindersState {
   /** Whether iOS has granted notification permission. */
@@ -40,8 +64,6 @@ export function useReminders(): RemindersState {
   const [permitted, setPermitted] = useState(false);
   const [scheduled, setScheduled] = useState(0);
   const [today, setToday] = useState(todayIso);
-
-  const lastSignature = useRef<string | null>(null);
 
   const reminderSettings = useMemo(
     () => ({
@@ -86,14 +108,14 @@ export function useReminders(): RemindersState {
       // rather than repeatedly clearing it.
       return;
     }
-    if (lastSignature.current === signature) {
+    if (appliedSignature === signature) {
       return;
     }
 
     let cancelled = false;
-    lastSignature.current = signature;
+    appliedSignature = signature;
 
-    applyPlan(plans, reminderSettings.reminderHour).then((result) => {
+    serialise(() => applyPlan(plans, reminderSettings.reminderHour)).then((result) => {
       if (!cancelled) {
         setScheduled(result.scheduled);
       }
@@ -117,14 +139,14 @@ export function useReminders(): RemindersState {
     if (granted) {
       updateSettings({ remindersEnabled: true });
       // Force the next effect run to reschedule even if the plan text matches.
-      lastSignature.current = null;
+      invalidate();
     }
     return granted;
   }, [updateSettings]);
 
   const disable = useCallback(() => {
     updateSettings({ remindersEnabled: false });
-    lastSignature.current = null;
+    invalidate();
   }, [updateSettings]);
 
   return {

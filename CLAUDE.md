@@ -59,13 +59,16 @@ Never claim on-device behaviour has been verified from a Windows-side check. Say
 src/app/                      Expo Router routes only — thin, no logic
   (tabs)/index                Dashboard
   (tabs)/subscriptions        Full list
+  (tabs)/insights             Charts and waste-spotting
+  (tabs)/settings             Settings and backup
   subscription/[id]           Detail (pushed)
   add/, edit/[id]             Add & edit (modals)
 src/domain/                   PURE TypeScript — no React, no react-native
   date, money, currency, cycle, fx, subscription, totals
-src/data/                     Store, brand catalogue, rates, migrations
-src/ui/                       Tokens, colour maths, primitives, BrandIcon
+src/data/                     Store, brand catalogue, rates, settings, migrations
+src/ui/                       Tokens, colour maths, primitives, BrandIcon, charts
 src/features/                 Screen-level components, grouped by feature
+  dashboard, subscriptions, subscription-form, reminders, insights, settings
 ```
 
 Routes under `src/app/` stay thin wrappers; the screen itself lives in `src/features/`.
@@ -82,6 +85,10 @@ Routes under `src/app/` stay thin wrappers; the screen itself lives in `src/feat
 - **Brand colours never tint UI surfaces directly.** They go through `toAccent()` in `src/ui/color.ts`, which pins lightness and saturation while preserving hue. Raw brand hex is only for the logo tile. Without this, near-black brands vanish and neon ones dominate.
 - **The brand catalogue is generated**, not hand-written — `scripts/generate-brands.mjs`. It searches three simple-icons versions, because the current release has delisted many major brands (Amazon, Adobe, Xbox, OpenAI, Slack…) that older versions still carry. Never hand-write an SVG path: a wrong one renders as a plausible-looking blob.
 - **Exchange rates must fail soft.** `src/data/rates.ts` rejects a malformed response *whole* rather than half-applying it, and any failure leaves the cached table in place. Stale rates beat a blank headline; a partially-wrong rate table silently corrupts every total.
+- **Settings live in `src/data/settings.ts`, not `store.ts`.** The store imports AsyncStorage and expo-crypto and cannot run under Jest. Anything needing the shape of settings imports from the pure module.
+- **iOS caps pending local notifications at 64**, silently dropping the rest. `src/features/reminders/plan.ts` sorts by fire date and truncates to 56. Reminder scheduling state is module-level and serialised, because the hook is mounted by more than one screen and two overlapping syncs can leave no reminders at all.
+- **Charts are single-series on purpose.** Bar length carries magnitude, labels carry identity, colour encodes nothing. That avoids categorical-palette CVD problems and stops colour tracking rank. The chart hue was chosen by running the dataviz palette validator, not by eye. `palette.warning` and `palette.positive` sit ~7 ΔE apart under protanopia, so they are status-only and must always carry a text label.
+- **Backups are the only recovery path.** A sideloaded app can lose its storage on a failed re-sign. `src/features/settings/backup.ts` refuses anything that is not recognisably one of our backups rather than wiping good data, and skips individual bad rows by name rather than discarding the file.
 
 ## Design
 
@@ -102,8 +109,8 @@ The repository lives on the `main` branch. **Commit regularly and in small, self
 
 Built in phases, one at a time, each ending with something the user tries on their phone. Full plan: `C:\Users\Stevo\.claude\plans\crystalline-snacking-pinwheel.md`.
 
-**Done:** 0 toolchain (notifications proven on device) · 1 domain core · 2 catalogue + storage · 3 design system · 4 add/edit · 5 dashboard + live FX · 6 list + detail.
+**All ten phases are complete.** 0 toolchain · 1 domain core · 2 catalogue + storage · 3 design system · 4 add/edit · 5 dashboard + live FX · 6 list + detail · 7 reminders · 8 insights · 9 settings + backup · 10 icons, EAS config and the sideloading guide.
 
-**Next:** 7 reminders · 8 insights · 9 settings, backup/export · 10 standalone sideloaded build.
+The remaining step is not code: the user runs `eas build --platform ios --profile preview` under their own Expo account and sideloads the result. `SIDELOADING.md` is the walkthrough. That build cannot be run from here — it needs their account.
 
-`src/data/sampleData.ts` exists only for evaluating screens against realistic data, and should be removed once the app holds real subscriptions.
+`src/data/sampleData.ts` is reachable from Settings and exists only for evaluating screens against realistic data.
