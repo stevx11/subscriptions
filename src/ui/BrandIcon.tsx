@@ -10,6 +10,7 @@ import {
   readableTextOn,
 } from '@/data/brands';
 import { shade } from './color';
+import { fonts } from './fonts';
 
 interface BrandIconProps {
   /** Catalogue id. Falls back to a monogram when absent or unknown. */
@@ -123,7 +124,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   monogram: {
-    fontWeight: '700',
+    fontFamily: fonts.displayBold,
     includeFontPadding: false,
     textAlign: 'center',
   },

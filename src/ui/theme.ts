@@ -13,6 +13,8 @@
  * looking like a set rather than a paint chart.
  */
 
+import { fonts } from './fonts';
+
 export const palette = {
   // Grounds, darkest to lightest.
   bg: '#0A0D12',
@@ -53,14 +55,21 @@ export const radius = {
 /**
  * Type scale. Sizes are deliberately few — a scale with eleven steps is a
  * scale nobody follows.
+ *
+ * Each step names a font *face*, never a family plus a numeric weight: React
+ * Native does not synthesise weights for custom fonts, so `fontWeight: '700'`
+ * beside a custom family silently renders regular. See `fonts.ts`.
+ *
+ * Display sizes use Space Grotesk, small text uses Manrope. The crossover sits
+ * at `heading`, which is the largest size that still appears in dense rows.
  */
 export const type = {
-  display: { fontSize: 40, fontWeight: '800', letterSpacing: -1.2 },
-  title: { fontSize: 24, fontWeight: '700', letterSpacing: -0.4 },
-  heading: { fontSize: 17, fontWeight: '700', letterSpacing: -0.2 },
-  body: { fontSize: 15, fontWeight: '500' },
-  label: { fontSize: 13, fontWeight: '600' },
-  caption: { fontSize: 11, fontWeight: '700', letterSpacing: 1.3 },
+  display: { fontSize: 38, fontFamily: fonts.displayBold, letterSpacing: -1.4 },
+  title: { fontSize: 23, fontFamily: fonts.displayBold, letterSpacing: -0.6 },
+  heading: { fontSize: 16, fontFamily: fonts.bodyBold, letterSpacing: -0.2 },
+  body: { fontSize: 15, fontFamily: fonts.bodyMedium },
+  label: { fontSize: 13, fontFamily: fonts.bodySemibold },
+  caption: { fontSize: 11, fontFamily: fonts.bodyBold, letterSpacing: 1.2 },
 } as const;
 
 /**
@@ -87,5 +96,5 @@ export const tint = {
   chip: 0.16,
 } as const;
 
-export const theme = { palette, spacing, radius, type, elevation, tint } as const;
+export const theme = { palette, spacing, radius, type, elevation, tint, fonts } as const;
 export type Theme = typeof theme;

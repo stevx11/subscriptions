@@ -2,6 +2,7 @@ import { memo } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import * as Haptics from 'expo-haptics';
 
+import { fonts } from './fonts';
 import { palette, radius, spacing } from './theme';
 
 /**
@@ -77,7 +78,8 @@ const styles = StyleSheet.create({
   keyLabel: {
     color: palette.text,
     fontSize: 24,
-    fontWeight: '600',
+    // The keypad is all digits, so it uses the display face deliberately.
+    fontFamily: fonts.displayMedium,
     fontVariant: ['tabular-nums'],
   },
   deleteLabel: { color: palette.textMuted, fontSize: 20 },

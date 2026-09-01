@@ -14,6 +14,7 @@ import {
   startOfMonth,
   todayIso,
 } from '@/domain/date';
+import { fonts } from './fonts';
 import { palette, radius, spacing } from './theme';
 import { withAlpha } from './color';
 
@@ -135,7 +136,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: spacing.xs,
   },
-  monthLabel: { color: palette.text, fontSize: 16, fontWeight: '700' },
+  monthLabel: { color: palette.text, fontSize: 16, fontFamily: fonts.displayBold },
   nav: {
     width: 34,
     height: 34,
@@ -145,7 +146,7 @@ const styles = StyleSheet.create({
     backgroundColor: palette.surface,
   },
   navPressed: { backgroundColor: palette.surfaceRaised },
-  navLabel: { color: palette.text, fontSize: 20, lineHeight: 22, fontWeight: '600' },
+  navLabel: { color: palette.text, fontSize: 20, lineHeight: 22, fontFamily: fonts.bodySemibold },
 
   weekdays: { flexDirection: 'row' },
   weekday: {
@@ -153,7 +154,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     color: palette.textFaint,
     fontSize: 11,
-    fontWeight: '700',
+    fontFamily: fonts.bodyBold,
   },
 
   grid: { flexDirection: 'row', flexWrap: 'wrap' },
@@ -165,7 +166,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  dayText: { color: palette.text, fontSize: 15, fontWeight: '500' },
-  daySelected: { color: palette.bg, fontWeight: '700' },
+  dayText: { color: palette.text, fontSize: 15, fontFamily: fonts.displayMedium },
+  daySelected: { color: palette.bg, fontFamily: fonts.displayBold },
   dayDisabled: { color: palette.textFaint, opacity: 0.4 },
 });

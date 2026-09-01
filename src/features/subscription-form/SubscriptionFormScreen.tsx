@@ -21,6 +21,7 @@ import { Calendar } from '@/ui/Calendar';
 import { Keypad } from '@/ui/Keypad';
 import { toAccent, withAlpha } from '@/ui/color';
 import { Pill, Txt } from '@/ui/primitives';
+import { fonts } from '@/ui/fonts';
 import { palette, radius, spacing } from '@/ui/theme';
 import {
   changeCurrency,
@@ -424,7 +425,7 @@ const styles = StyleSheet.create({
     flex: 1,
     color: palette.text,
     fontSize: 22,
-    fontWeight: '700',
+    fontFamily: fonts.displayBold,
     paddingVertical: spacing.sm,
   },
 

@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { fonts } from './fonts';
 import { palette, radius, spacing, tint, type as typeScale } from './theme';
 import { withAlpha } from './color';
 
@@ -176,7 +177,7 @@ const styles = StyleSheet.create({
     borderRadius: radius.pill,
     alignSelf: 'flex-start',
   },
-  pillText: { fontSize: 11, fontWeight: '700', letterSpacing: 0.2 },
+  pillText: { fontSize: 11, fontFamily: fonts.bodyBold, letterSpacing: 0.2 },
   sectionHeader: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -186,8 +187,8 @@ const styles = StyleSheet.create({
   sectionTitle: {
     color: palette.textFaint,
     fontSize: 11,
-    fontWeight: '700',
-    letterSpacing: 1.3,
+    fontFamily: fonts.bodyBold,
+    letterSpacing: 1.2,
   },
   divider: { height: 1, backgroundColor: palette.border },
 });

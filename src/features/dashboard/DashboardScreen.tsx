@@ -28,6 +28,7 @@ import { chargesBetween, computeTotals } from '@/domain/totals';
 import { BrandIcon } from '@/ui/BrandIcon';
 import { toAccent, withAlpha } from '@/ui/color';
 import { Card, Pill, Screen, SectionHeader, Txt } from '@/ui/primitives';
+import { fonts } from '@/ui/fonts';
 import { palette, radius, spacing, tint } from '@/ui/theme';
 import { groupUpcoming } from './grouping';
 
@@ -547,7 +548,7 @@ const styles = StyleSheet.create({
     elevation: 8,
   },
   fabPressed: { transform: [{ scale: 0.94 }], opacity: 0.9 },
-  fabPlus: { fontSize: 30, lineHeight: 34, fontWeight: '400' },
+  fabPlus: { fontSize: 30, lineHeight: 34, fontFamily: fonts.bodyMedium },
   primaryButton: {
     marginTop: spacing.sm,
     backgroundColor: palette.text,

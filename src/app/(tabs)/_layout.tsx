@@ -1,6 +1,7 @@
 import { Tabs } from 'expo-router';
 import Ionicons from '@expo/vector-icons/Ionicons';
 
+import { fonts } from '@/ui/fonts';
 import { palette } from '@/ui/theme';
 
 export default function TabsLayout() {
@@ -14,7 +15,7 @@ export default function TabsLayout() {
           backgroundColor: palette.surface,
           borderTopColor: palette.border,
         },
-        tabBarLabelStyle: { fontSize: 11, fontWeight: '600' },
+        tabBarLabelStyle: { fontSize: 11, fontFamily: fonts.bodySemibold },
       }}>
       <Tabs.Screen
         name="index"
