@@ -234,3 +234,16 @@ export function formatMonthLabel(date: IsoDate): string {
   const { year, month } = parseIsoDate(date);
   return `${MONTH_NAMES[month - 1]} ${year}`;
 }
+
+/** Last day of the month containing `date`. */
+export function endOfMonth(date: IsoDate): IsoDate {
+  const { year, month } = parseIsoDate(date);
+  return formatIsoDate({ year, month, day: daysInMonth(year, month) });
+}
+
+/** Whether two dates fall in the same calendar month. */
+export function isSameMonth(a: IsoDate, b: IsoDate): boolean {
+  const left = parseIsoDate(a);
+  const right = parseIsoDate(b);
+  return left.year === right.year && left.month === right.month;
+}

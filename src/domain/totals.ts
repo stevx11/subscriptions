@@ -9,7 +9,9 @@
  *      omits one of your subscriptions is worse than no number at all.
  */
 
+import { occurrencesBetween } from './cycle';
 import { CurrencyCode, minorUnitScale } from './currency';
+import { IsoDate } from './date';
 import { convertMoney, MissingRateError, RateTable } from './fx';
 import { Money, roundHalfAwayFromZero } from './money';
 import {
@@ -176,4 +178,69 @@ export function dailyCostMinor(subscription: Subscription): number {
 export function toMoney(amountMinor: number, currency: CurrencyCode): Money {
   void minorUnitScale(currency); // validates the code
   return { amount: roundHalfAwayFromZero(amountMinor), currency };
+}
+
+export interface ChargeWindow {
+  total: Money;
+  /** How many individual charges land in the window. */
+  count: number;
+  unconvertible: CurrencyCode[];
+}
+
+/**
+ * What will actually be charged between two dates, inclusive.
+ *
+ * Different from `computeTotals`: that answers "what does this cost per month
+ * on average", this answers "what is leaving my account before the month
+ * ends". A yearly subscription contributes its whole price in the month it
+ * bills and nothing in the other eleven — which is exactly the surprise the
+ * app exists to prevent.
+ */
+export function chargesBetween(
+  subscriptions: readonly Subscription[],
+  homeCurrency: CurrencyCode,
+  rates: RateTable | null,
+  from: IsoDate,
+  to: IsoDate,
+): ChargeWindow {
+  let total = 0;
+  let count = 0;
+  const unconvertible = new Set<CurrencyCode>();
+
+  for (const subscription of subscriptions) {
+    if (!isBilling(subscription)) continue;
+
+    // A trial bills first on the day it converts, which is not necessarily
+    // where its cycle anchor sits for older records.
+    const anchor =
+      subscription.status === 'trial' && subscription.trialEndsAt
+        ? subscription.trialEndsAt
+        : subscription.anchorDate;
+
+    const occurrences = occurrencesBetween(anchor, subscription.cycle, from, to);
+    if (occurrences.length === 0) continue;
+
+    try {
+      const each = convertMinorUnrounded(
+        subscription.price.amount,
+        subscription.price.currency,
+        homeCurrency,
+        rates,
+      );
+      total += each * occurrences.length;
+      count += occurrences.length;
+    } catch (error) {
+      if (error instanceof MissingRateError) {
+        unconvertible.add(subscription.price.currency);
+        continue;
+      }
+      throw error;
+    }
+  }
+
+  return {
+    total: { amount: roundHalfAwayFromZero(total), currency: homeCurrency },
+    count,
+    unconvertible: [...unconvertible],
+  };
 }

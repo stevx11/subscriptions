@@ -3,7 +3,7 @@ import { CurrencyCode } from './currency';
 import { RateTable } from './fx';
 import { formatMoney, money } from './money';
 import { Subscription } from './subscription';
-import { annualSavings, computeTotals, totalsByCategory } from './totals';
+import { annualSavings, chargesBetween, computeTotals, totalsByCategory } from './totals';
 
 const RATES: RateTable = {
   base: 'EUR',
@@ -215,5 +215,95 @@ describe('annualSavings', () => {
   it('refuses a cross-currency comparison', () => {
     const monthly = sub({ amount: 1000, currency: 'EUR' });
     expect(() => annualSavings(monthly, money(9900, 'USD'))).toThrow(/like-for-like/);
+  });
+});
+
+describe('chargesBetween', () => {
+  const RANGE_FROM = '2026-09-01';
+  const RANGE_TO = '2026-09-30';
+
+  it('counts a monthly charge once in the month', () => {
+    const s = sub({ amount: 1399, currency: 'EUR', anchorDate: '2026-01-15' });
+    const window = chargesBetween([s], 'EUR', RATES, RANGE_FROM, RANGE_TO);
+    expect(window.count).toBe(1);
+    expect(window.total.amount).toBe(1399);
+  });
+
+  /**
+   * The core difference from computeTotals: a yearly plan hits with its whole
+   * price in one month and nothing in the other eleven. Showing 1/12th of it
+   * as "due this month" is exactly the surprise the app exists to prevent.
+   */
+  it('charges a yearly plan in full in its billing month, nothing otherwise', () => {
+    const s = sub({
+      amount: 28900,
+      currency: 'EUR',
+      cycle: CYCLE_PRESETS.yearly,
+      anchorDate: '2025-09-12',
+    });
+    expect(chargesBetween([s], 'EUR', RATES, RANGE_FROM, RANGE_TO).total.amount).toBe(28900);
+    expect(
+      chargesBetween([s], 'EUR', RATES, '2026-10-01', '2026-10-31').total.amount,
+    ).toBe(0);
+  });
+
+  it('counts a weekly subscription several times', () => {
+    const s = sub({
+      amount: 500,
+      currency: 'EUR',
+      cycle: CYCLE_PRESETS.weekly,
+      anchorDate: '2026-09-02',
+    });
+    const window = chargesBetween([s], 'EUR', RATES, RANGE_FROM, RANGE_TO);
+    expect(window.count).toBe(5); // 2nd, 9th, 16th, 23rd, 30th
+    expect(window.total.amount).toBe(2500);
+  });
+
+  it('converts foreign charges into the home currency', () => {
+    const s = sub({ amount: 1100, currency: 'USD', anchorDate: '2026-09-10' });
+    expect(chargesBetween([s], 'EUR', RATES, RANGE_FROM, RANGE_TO).total.amount).toBe(1000);
+  });
+
+  it('ignores paused and cancelled subscriptions', () => {
+    const s = sub({ amount: 5000, currency: 'EUR', status: 'paused', anchorDate: '2026-09-10' });
+    expect(chargesBetween([s], 'EUR', RATES, RANGE_FROM, RANGE_TO).count).toBe(0);
+  });
+
+  it('bills a trial on the day it converts', () => {
+    const s = sub({
+      amount: 899,
+      currency: 'EUR',
+      status: 'trial',
+      trialEndsAt: '2026-09-20',
+      anchorDate: '2026-09-20',
+    });
+    const window = chargesBetween([s], 'EUR', RATES, RANGE_FROM, RANGE_TO);
+    expect(window.count).toBe(1);
+    expect(window.total.amount).toBe(899);
+  });
+
+  it('excludes a trial converting after the window', () => {
+    const s = sub({
+      amount: 899,
+      currency: 'EUR',
+      status: 'trial',
+      trialEndsAt: '2026-10-20',
+      anchorDate: '2026-10-20',
+    });
+    expect(chargesBetween([s], 'EUR', RATES, RANGE_FROM, RANGE_TO).count).toBe(0);
+  });
+
+  it('reports currencies it could not convert', () => {
+    const s = sub({ amount: 500, currency: 'BRL', anchorDate: '2026-09-10' });
+    const window = chargesBetween([s], 'EUR', RATES, RANGE_FROM, RANGE_TO);
+    expect(window.unconvertible).toEqual(['BRL']);
+    expect(window.total.amount).toBe(0);
+  });
+
+  it('is zero for an empty window', () => {
+    const s = sub({ amount: 1399, currency: 'EUR', anchorDate: '2026-01-15' });
+    const window = chargesBetween([s], 'EUR', RATES, '2026-09-20', '2026-09-25');
+    expect(window.count).toBe(0);
+    expect(window.total.amount).toBe(0);
   });
 });
