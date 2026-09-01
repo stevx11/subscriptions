@@ -5,22 +5,18 @@
   },
   "build": {
     "preview": {
-      "//": "Produces an .ipa for sideloading with AltStore or Sideloadly. Internal distribution means it is not routed through TestFlight or the App Store.",
       "distribution": "internal",
       "ios": {
         "simulator": false
-      },
-      "channel": "preview"
+      }
     },
     "simulator": {
-      "//": "An .app for the iOS Simulator. Useless without a Mac, kept only because it needs no signing credentials at all.",
       "distribution": "internal",
       "ios": {
         "simulator": true
       }
     },
     "production": {
-      "//": "Only relevant with a paid Apple Developer account.",
       "distribution": "store",
       "autoIncrement": true
     }

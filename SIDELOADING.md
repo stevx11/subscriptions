@@ -29,9 +29,15 @@ eas login
 eas build --platform ios --profile preview
 ```
 
-The `preview` profile is already configured in `eas.json` with
-`distribution: internal`, which is the setting that produces a sideloadable
-`.ipa` rather than something bound for the App Store.
+The `preview` profile is already configured in `eas.json`. What each profile is
+for — `eas.json` is strict JSON and rejects unknown keys, so it cannot carry
+comments of its own:
+
+| Profile | What it builds |
+|---|---|
+| `preview` | `distribution: internal` — the sideloadable `.ipa`. **This is the one you want.** |
+| `simulator` | An `.app` for the iOS Simulator. Needs no signing credentials, but is useless without a Mac. |
+| `production` | A store build. Only relevant with a paid Apple Developer account. |
 
 EAS will ask about signing credentials. What you pick determines how the next
 step works:
