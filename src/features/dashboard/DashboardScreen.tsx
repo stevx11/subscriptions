@@ -164,9 +164,9 @@ function accentFor(subscription: Subscription): string {
   return toAccent(getBrand(subscription.brandId)?.hex ?? subscription.color);
 }
 
-function openEdit(id: string) {
+function openDetail(id: string) {
   Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-  router.push({ pathname: '/edit/[id]', params: { id } });
+  router.push({ pathname: '/subscription/[id]', params: { id } });
 }
 
 function relativeDay(days: number): string {
@@ -231,7 +231,7 @@ function TrialWarning({ entries }: { entries: UpcomingEntry[] }) {
       {entries.map(({ subscription, days }) => (
         <Pressable
           key={subscription.id}
-          onPress={() => openEdit(subscription.id)}
+          onPress={() => openDetail(subscription.id)}
           style={styles.trialRow}>
           <BrandIcon brandId={subscription.brandId} name={subscription.name} size={32} />
           <Txt variant="heading" style={styles.trialName} numberOfLines={1}>
@@ -257,7 +257,7 @@ function NextUpCard({ entry }: { entry: UpcomingEntry }) {
       accent={accent}
       strength={tint.hero}
       style={styles.hero}
-      onPress={() => openEdit(subscription.id)}>
+      onPress={() => openDetail(subscription.id)}>
       {/* A soft falloff stops the tint reading as a flat colour block. */}
       <Svg style={StyleSheet.absoluteFill} width="100%" height="100%">
         <Defs>
@@ -355,7 +355,7 @@ function UpcomingRow({ entry }: { entry: UpcomingEntry }) {
   const accent = accentFor(subscription);
 
   return (
-    <Card accent={accent} style={styles.row} onPress={() => openEdit(subscription.id)}>
+    <Card accent={accent} style={styles.row} onPress={() => openDetail(subscription.id)}>
       <View style={[styles.edge, { backgroundColor: accent }]} />
       <BrandIcon brandId={subscription.brandId} name={subscription.name} size={40} />
 
@@ -383,7 +383,7 @@ function UpcomingRow({ entry }: { entry: UpcomingEntry }) {
 
 function PausedRow({ subscription }: { subscription: Subscription }) {
   return (
-    <Card style={[styles.row, styles.pausedRow]} onPress={() => openEdit(subscription.id)}>
+    <Card style={[styles.row, styles.pausedRow]} onPress={() => openDetail(subscription.id)}>
       <View style={styles.dimmed}>
         <BrandIcon brandId={subscription.brandId} name={subscription.name} size={40} />
       </View>

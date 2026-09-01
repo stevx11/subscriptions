@@ -7,7 +7,12 @@
  * disagreeing because they sampled the clock a millisecond apart.
  */
 
-import { BillingCycle, nextOccurrenceAfter, occurrencesPerYear } from './cycle';
+import {
+  BillingCycle,
+  nextOccurrenceAfter,
+  occurrencesBetween,
+  occurrencesPerYear,
+} from './cycle';
 import { CurrencyCode } from './currency';
 import { daysBetween, IsoDate, todayIso } from './date';
 import { Money } from './money';
@@ -135,4 +140,34 @@ export function lastPriceChange(
     to: { amount: latest.amount, currency: latest.currency },
     since: latest.since,
   };
+}
+
+/**
+ * How much this subscription has taken since it started billing.
+ *
+ * Counts real charges from the anchor up to and including today, so a yearly
+ * plan bought three years ago reads as three payments, not thirty-six. Returns
+ * unrounded minor units in the subscription's own currency.
+ */
+export function totalPaidMinor(
+  subscription: Subscription,
+  today: IsoDate = todayIso(),
+): { amountMinor: number; charges: number } {
+  const start =
+    subscription.status === 'trial' && subscription.trialEndsAt
+      ? subscription.trialEndsAt
+      : subscription.anchorDate;
+
+  if (daysBetween(start, today) < 0) {
+    return { amountMinor: 0, charges: 0 };
+  }
+
+  // A cancelled subscription stopped taking money when it was cancelled.
+  const end =
+    subscription.status === 'cancelled' && subscription.cancelledAt
+      ? subscription.cancelledAt
+      : today;
+
+  const charges = occurrencesBetween(start, subscription.cycle, start, end).length;
+  return { amountMinor: subscription.price.amount * charges, charges };
 }

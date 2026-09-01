@@ -7,6 +7,7 @@ import {
   monthlyCostMinor,
   nextBillingDate,
   Subscription,
+  totalPaidMinor,
   yearlyCostMinor,
 } from './subscription';
 
@@ -202,5 +203,49 @@ describe('fx', () => {
 
   it('treats an unparseable timestamp as stale', () => {
     expect(isRateTableStale({ ...RATES, fetchedAt: 'never' })).toBe(true);
+  });
+});
+
+describe('totalPaidMinor', () => {
+  it('counts every monthly charge since the anchor', () => {
+    const result = totalPaidMinor(make({ anchorDate: '2026-01-15' }), '2026-09-01');
+    expect(result.charges).toBe(8); // Jan through Aug
+    expect(result.amountMinor).toBe(8 * 1399);
+  });
+
+  it('counts a yearly plan in years, not months', () => {
+    const yearly = make({
+      cycle: CYCLE_PRESETS.yearly,
+      anchorDate: '2023-06-10',
+      price: money(28900, 'EUR'),
+    });
+    expect(totalPaidMinor(yearly, '2026-09-01').charges).toBe(4); // 2023-2026
+  });
+
+  it('includes a charge landing exactly today', () => {
+    expect(totalPaidMinor(make({ anchorDate: '2026-09-01' }), '2026-09-01').charges).toBe(1);
+  });
+
+  it('is zero before billing starts', () => {
+    const result = totalPaidMinor(make({ anchorDate: '2026-12-01' }), '2026-09-01');
+    expect(result).toEqual({ amountMinor: 0, charges: 0 });
+  });
+
+  it('stops counting at the cancellation date', () => {
+    const cancelled = make({
+      anchorDate: '2026-01-15',
+      status: 'cancelled',
+      cancelledAt: '2026-04-01',
+    });
+    expect(totalPaidMinor(cancelled, '2026-09-01').charges).toBe(3); // Jan, Feb, Mar
+  });
+
+  it('starts a trial at its conversion date, not its creation', () => {
+    const trial = make({
+      status: 'trial',
+      trialEndsAt: '2026-08-20',
+      anchorDate: '2026-08-20',
+    });
+    expect(totalPaidMinor(trial, '2026-09-01').charges).toBe(1);
   });
 });
