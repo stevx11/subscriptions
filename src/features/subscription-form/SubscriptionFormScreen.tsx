@@ -41,6 +41,15 @@ const CYCLE_OPTIONS: { label: string; cycle: BillingCycle }[] = [
   { label: 'Yearly', cycle: CYCLE_PRESETS.yearly },
 ];
 
+/** null means "whatever the global default is", which is the usual case. */
+const REMINDER_OPTIONS: { label: string; days: number | null }[] = [
+  { label: 'Default', days: null },
+  { label: 'Same day', days: 0 },
+  { label: '1 day', days: 1 },
+  { label: '3 days', days: 3 },
+  { label: '1 week', days: 7 },
+];
+
 function sameCycle(a: BillingCycle, b: BillingCycle): boolean {
   return a.unit === b.unit && a.interval === b.interval;
 }
@@ -225,6 +234,20 @@ export function SubscriptionFormScreen({
             ))}
           </View>
           {attempted && errors.anchorDate && <FieldError message={errors.anchorDate} />}
+        </Field>
+
+        <Field label="Remind me">
+          <View style={styles.chips}>
+            {REMINDER_OPTIONS.map((option) => (
+              <Chip
+                key={option.label}
+                label={option.label}
+                active={draft.reminderDaysBefore === option.days}
+                accent={accent}
+                onPress={() => patch({ reminderDaysBefore: option.days })}
+              />
+            ))}
+          </View>
         </Field>
 
         <View style={styles.switchRow}>

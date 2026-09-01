@@ -30,6 +30,8 @@ import { toAccent, withAlpha } from '@/ui/color';
 import { Card, Pill, Screen, SectionHeader, Txt } from '@/ui/primitives';
 import { fonts } from '@/ui/fonts';
 import { palette, radius, spacing, tint } from '@/ui/theme';
+import { RemindersCard } from '@/features/reminders/RemindersCard';
+import { useReminders } from '@/features/reminders/useReminders';
 import { groupUpcoming } from './grouping';
 
 /** How far ahead the timeline strip looks. */
@@ -59,6 +61,7 @@ export function DashboardScreen() {
   const rates = useAppStore((state) => state.rates);
   const addSubscription = useAppStore((state) => state.addSubscription);
   const rateStatus = useRates();
+  const reminders = useReminders();
 
   const today = todayIso();
 
@@ -129,6 +132,8 @@ export function DashboardScreen() {
         </View>
 
         {convertingTrials.length > 0 && <TrialWarning entries={convertingTrials} />}
+
+        <RemindersCard state={reminders} />
 
         {next && <NextUpCard entry={next} />}
 

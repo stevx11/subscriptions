@@ -29,12 +29,17 @@ export interface Settings {
   defaultReminderDays: number;
   /** Whether reminders are scheduled at all. */
   remindersEnabled: boolean;
+  /** Local hour of day reminders fire, 0-23. */
+  reminderHour: number;
 }
 
 export const DEFAULT_SETTINGS: Settings = {
   homeCurrency: 'EUR',
   defaultReminderDays: 2,
-  remindersEnabled: true,
+  // Off until the user opts in: iOS only ever shows the permission prompt
+  // once, so it must follow a deliberate action rather than app launch.
+  remindersEnabled: false,
+  reminderHour: 9,
 };
 
 /** What a caller supplies when creating a subscription; the rest is derived. */
@@ -165,6 +170,17 @@ export const useAppStore = create<AppState>()(
         settings: state.settings,
         rates: state.rates,
       }),
+      merge: (persisted, current) => {
+        // Settings gain fields between releases. A shallow merge would leave
+        // a newly added key undefined on an existing install, so defaults are
+        // layered underneath whatever was stored.
+        const saved = (persisted ?? {}) as Partial<AppState>;
+        return {
+          ...current,
+          ...saved,
+          settings: { ...DEFAULT_SETTINGS, ...(saved.settings ?? {}) },
+        };
+      },
       migrate: (persisted, version) =>
         migrateState(persisted as PersistedShape, version) as never,
       onRehydrateStorage: () => (state) => {
