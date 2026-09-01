@@ -34,6 +34,7 @@ import { palette, radius, spacing } from '@/ui/theme';
 export function SubscriptionDetailScreen({ id }: { id: string }) {
   const subscription = useAppStore((state) => state.subscriptions.find((s) => s.id === id));
   const setStatus = useAppStore((state) => state.setStatus);
+  const updateSubscription = useAppStore((state) => state.updateSubscription);
   const removeSubscription = useAppStore((state) => state.removeSubscription);
 
   const today = todayIso();
@@ -223,6 +224,41 @@ export function SubscriptionDetailScreen({ id }: { id: string }) {
       )}
 
       <View style={styles.section}>
+        <SectionHeader title="How much do you use it?" />
+        <Card style={styles.usageCard}>
+          <View style={styles.usageRow}>
+            {USAGE_OPTIONS.map((option) => {
+              const active = subscription.usageRating === option.value;
+              return (
+                <Pressable
+                  key={option.value}
+                  onPress={() => {
+                    Haptics.selectionAsync();
+                    // Tapping the active option clears it, so a rating can be
+                    // undone without a separate control.
+                    updateSubscription(subscription.id, {
+                      usageRating: active ? undefined : option.value,
+                    });
+                  }}
+                  style={({ pressed }) => [
+                    styles.usageChip,
+                    active && { borderColor: accent, backgroundColor: withAlpha(accent, 0.16) },
+                    pressed && styles.pressed,
+                  ]}>
+                  <Txt variant="label" color={active ? accent : palette.textMuted}>
+                    {option.label}
+                  </Txt>
+                </Pressable>
+              );
+            })}
+          </View>
+          <Txt variant="label" color={palette.textFaint}>
+            Anything you rate low shows up in Insights with what it costs a year.
+          </Txt>
+        </Card>
+      </View>
+
+      <View style={styles.section}>
         <SectionHeader title="Started" />
         <Card style={styles.statCard}>
           <StatRow
@@ -304,6 +340,14 @@ function ActionButton({
   );
 }
 
+/** Deliberately coarse: a 1-10 scale would demand precision nobody has. */
+const USAGE_OPTIONS = [
+  { value: 0, label: 'Never' },
+  { value: 1, label: 'Rarely' },
+  { value: 2, label: 'Sometimes' },
+  { value: 3, label: 'All the time' },
+];
+
 const styles = StyleSheet.create({
   topBar: {
     flexDirection: 'row',
@@ -333,6 +377,16 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.md,
   },
   changeCard: { gap: spacing.xs },
+  usageCard: { gap: spacing.md },
+  usageRow: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
+  usageChip: {
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderRadius: radius.pill,
+    borderWidth: 1,
+    borderColor: palette.border,
+    backgroundColor: palette.surface,
+  },
 
   actions: { gap: spacing.sm },
   actionButton: {

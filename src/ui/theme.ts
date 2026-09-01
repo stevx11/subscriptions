@@ -29,9 +29,20 @@ export const palette = {
   textFaint: '#63717F',
 
   // Semantic. Used sparingly — brand colour does most of the work.
+  // These are reserved for status and always ship with a text label, never
+  // colour alone: amber and green sit only ~7 ΔE apart under protanopia.
   positive: '#4ADE80',
   warning: '#FBBF24',
   danger: '#F87171',
+
+  // Charts. A single hue, because the charts here are single-series: bar
+  // length carries magnitude and the labels carry identity, so colour encodes
+  // nothing. That sidesteps categorical-palette CVD problems entirely, and
+  // avoids the trap of ramping colour by rank — which would repaint the
+  // survivors whenever a filter changes the ordering.
+  // Validated against the dark surface: inside the L 0.48-0.67 band, above the
+  // chroma floor, and over 3:1 contrast.
+  chart: '#4C8FE0',
 } as const;
 
 export const spacing = {

@@ -247,3 +247,8 @@ export function isSameMonth(a: IsoDate, b: IsoDate): boolean {
   const right = parseIsoDate(b);
   return left.year === right.year && left.month === right.month;
 }
+
+/** "Sep" — compact month label for chart axes. */
+export function formatMonthShort(date: IsoDate): string {
+  return MONTH_NAMES[parseIsoDate(date).month - 1].slice(0, 3);
+}
