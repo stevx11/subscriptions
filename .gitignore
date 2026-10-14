@@ -37,3 +37,6 @@ yarn-error.*
 *.pem
 *.swp
 *~
+
+CLAUDE.md
+.claude/
